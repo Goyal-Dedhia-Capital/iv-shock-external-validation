@@ -5,7 +5,6 @@ version = 4
 [[package]]
 name = "backtest-contracts"
 version = "0.1.0"
-source = "git+https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git?rev=c3825ab856d4e480bd993c6c68a28ae4f69d602e#c3825ab856d4e480bd993c6c68a28ae4f69d602e"
 dependencies = [
  "serde",
  "serde_json",
@@ -14,7 +13,6 @@ dependencies = [
 [[package]]
 name = "backtest-engine"
 version = "0.1.0"
-source = "git+https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git?rev=c3825ab856d4e480bd993c6c68a28ae4f69d602e#c3825ab856d4e480bd993c6c68a28ae4f69d602e"
 dependencies = [
  "backtest-contracts",
  "serde",
@@ -26,7 +24,6 @@ dependencies = [
 [[package]]
 name = "backtest-research-process"
 version = "0.1.0"
-source = "git+https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git?rev=c3825ab856d4e480bd993c6c68a28ae4f69d602e#c3825ab856d4e480bd993c6c68a28ae4f69d602e"
 dependencies = [
  "backtest-contracts",
  "backtest-engine",

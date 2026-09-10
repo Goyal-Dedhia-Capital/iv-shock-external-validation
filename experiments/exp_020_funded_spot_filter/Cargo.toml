@@ -7,7 +7,7 @@ license = "Proprietary"
 publish = false
 
 [dependencies]
-backtest-contracts = { git = "https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git", rev = "6ce0a234130160e5fa0c39dc5115f0d878ceeb7f" }
+backtest-contracts = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/contracts" }
 exp019-funded-best-family-portfolio = { path = "../exp_019_funded_best_family_portfolio" }
 serde_json = "1.0"
 

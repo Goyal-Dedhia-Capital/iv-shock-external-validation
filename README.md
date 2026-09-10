@@ -31,6 +31,10 @@ replications of the frozen minute-clock studies.
   trade intents.
 - The execution engine owns fills, fees, margin, positions, and accounting.
 
+The two standalone historical policies compile against minimal source snapshots
+of their exact published engine revisions under `vendor/`; this avoids a hidden
+cross-repository credential dependency. No engine binary or run output is stored.
+
 ## First local run
 
 ```bash

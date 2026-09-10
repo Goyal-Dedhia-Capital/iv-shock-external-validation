@@ -268,14 +268,21 @@ fn parse_date(value: &str) -> Result<i64, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     fn fixture() -> (std::path::PathBuf, String) {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path = std::env::temp_dir().join(format!("iv-shock-calendar-{nonce}.json"));
+        let sequence = FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let process = std::process::id();
+        let path = std::env::temp_dir().join(format!(
+            "iv-shock-calendar-{process}-{nonce}-{sequence}.json"
+        ));
         let value = serde_json::json!({
             "calendar_version": 1,
             "status": "READY",

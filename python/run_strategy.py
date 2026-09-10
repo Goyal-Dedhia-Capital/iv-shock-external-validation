@@ -63,6 +63,7 @@ def main() -> int:
             "rust-toolchain.toml",
             "uv.lock",
             "variants",
+            "vendor",
         ],
         cwd=ROOT,
         check=True,
