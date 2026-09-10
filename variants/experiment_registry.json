@@ -32,7 +32,19 @@
     ["EXP031", "score_admission"],
     ["EXP032", "final_score_gated_book"],
     ["EXP033", "groww_capital_admission"],
-    ["EXP034", "entry_volume_liquidity"]
+    ["EXP034", "entry_volume_liquidity"],
+    ["EXP035", "atm_otm_cross_expiry"],
+    ["EXP036", "atm_otm_feature_analysis"],
+    ["EXP037", "atm_otm_margin_replay"],
+    ["EXP038", "r2_margin_optimization"],
+    ["EXP039", "r2_tradability_tail_replay"],
+    ["EXP040", "r2_score_priority_replay"],
+    ["EXP041", "r2_call_verticals"],
+    ["EXP042", "r2_rho_premium_screen"],
+    ["EXP043", "r2_rho_expansion_replay"],
+    ["EXP044", "r2_rho_main_signal"],
+    ["EXP045", "r2_score_only_signal"],
+    ["EXP046", "r2_shock_threshold"]
   ],
   "h5": [
     ["EXP001", "baseline_long_and_chain_response"],

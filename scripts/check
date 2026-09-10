@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 uv run ruff check python tests
+uv run ruff check experiments/exp021_walkforward_sizing/*.py
 uv run pytest -q
 python3 -m json.tool contracts/input_schema.json >/dev/null
+python3 -m json.tool contracts/strategy_packet.schema.json >/dev/null
+python3 -m json.tool contracts/research_protocol.schema.json >/dev/null
 python3 -m json.tool contracts/output_schema.json >/dev/null
 python3 -m json.tool contracts/source_contract.example.json >/dev/null
 python3 -m json.tool contracts/exchange_calendar.example.json >/dev/null
 for path in variants/*.json; do
   python3 -m json.tool "$path" >/dev/null
 done
+for path in models/*.json; do
+  python3 -m json.tool "$path" >/dev/null
+done
+cargo_target="${TMPDIR:-/tmp}/iv-shock-external-validation-target"
 cargo fmt --manifest-path rust/Cargo.toml --all -- --check
-cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets -- -D warnings
-cargo test --manifest-path rust/Cargo.toml --workspace --quiet
+CARGO_TARGET_DIR="$cargo_target" cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets -- -D warnings
+CARGO_TARGET_DIR="$cargo_target" cargo test --manifest-path rust/Cargo.toml --workspace --quiet
+for experiment in experiments/exp021_walkforward_sizing experiments/exp046_r2_core; do
+  python3 -m json.tool "$experiment/policy_config.json" >/dev/null
+  cargo fmt --manifest-path "$experiment/Cargo.toml" -- --check
+  CARGO_TARGET_DIR="$cargo_target" cargo test --locked --manifest-path "$experiment/Cargo.toml" --quiet
+done

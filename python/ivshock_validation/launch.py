@@ -48,9 +48,16 @@ def load_bound_json(path: Path, *, kind: str) -> tuple[dict[str, Any], str]:
     return value, sha256_file(path)
 
 
-def run_bundle_hash(strategy_revision: str, calendar_hash: str, source_hash: str) -> str:
+def run_bundle_hash(
+    strategy_revision: str,
+    calendar_hash: str,
+    source_hash: str,
+    *additional_hashes: str,
+) -> str:
     """Bind strategy revision, calendar, and source contract into one identity."""
-    material = "\n".join((strategy_revision, calendar_hash, source_hash)).encode()
+    material = "\n".join(
+        (strategy_revision, calendar_hash, source_hash, *additional_hashes)
+    ).encode()
     return hashlib.sha256(material).hexdigest()
 
 

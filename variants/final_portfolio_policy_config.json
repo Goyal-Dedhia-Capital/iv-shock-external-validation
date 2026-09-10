@@ -1,0 +1,5 @@
+{
+  "mode": "final_candidate",
+  "books": ["H3_F4", "H5_F1", "H5_F2", "H5_F3", "H5_F5"],
+  "scenarios": ["final_candidate"]
+}

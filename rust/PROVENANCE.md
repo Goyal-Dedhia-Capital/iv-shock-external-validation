@@ -29,3 +29,10 @@
 
 Vendoring is intentional: the data owner receives the exact strategy-facing
 contracts and research logic without needing another private repository.
+
+- `models/exp032_reference_model_bundle.json` is the verified EXP032 external
+  coefficient bundle, SHA-256
+  `158d5bc92d2da250174649bfd1f1a4c7961d96bda14e9467f4adcb844ffb0b20`.
+  It contains 90 family-month fits and no raw market data or result tape. The
+  executable Rust scorer is limited to the bundle's 2024-07 through 2025-12
+  date range and rejects any missing or non-prior fit.

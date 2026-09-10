@@ -5,9 +5,33 @@ version = 4
 [[package]]
 name = "backtest-contracts"
 version = "0.1.0"
+source = "git+https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git?rev=c3825ab856d4e480bd993c6c68a28ae4f69d602e#c3825ab856d4e480bd993c6c68a28ae4f69d602e"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "backtest-engine"
+version = "0.1.0"
+source = "git+https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git?rev=c3825ab856d4e480bd993c6c68a28ae4f69d602e#c3825ab856d4e480bd993c6c68a28ae4f69d602e"
+dependencies = [
+ "backtest-contracts",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
+name = "backtest-research-process"
+version = "0.1.0"
+source = "git+https://github.com/Goyal-Dedhia-Capital/generic-backtest-engine.git?rev=c3825ab856d4e480bd993c6c68a28ae4f69d602e#c3825ab856d4e480bd993c6c68a28ae4f69d602e"
+dependencies = [
+ "backtest-contracts",
+ "backtest-engine",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -55,6 +79,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "exp046-r2-core-policy"
+version = "0.1.0"
+dependencies = [
+ "backtest-contracts",
+ "backtest-engine",
+ "backtest-research-process",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -69,49 +106,6 @@ name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
-
-[[package]]
-name = "iv-shock-calendar-guard"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
-name = "iv-shock-decision"
-version = "0.1.0"
-dependencies = [
- "backtest-contracts",
- "iv-shock-calendar-guard",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "iv-shock-sequential-books"
-version = "0.1.0"
-dependencies = [
- "backtest-contracts",
- "iv-shock-calendar-guard",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "iv-shock-strategy-policy"
-version = "0.1.0"
-dependencies = [
- "backtest-contracts",
- "iv-shock-calendar-guard",
- "iv-shock-decision",
- "iv-shock-sequential-books",
- "serde",
- "serde_json",
- "sha2",
-]
 
 [[package]]
 name = "libc"
