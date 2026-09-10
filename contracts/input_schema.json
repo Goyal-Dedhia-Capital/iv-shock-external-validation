@@ -3,9 +3,19 @@
   "row_key": ["timestamp", "ticker", "expiry_date", "strike_price", "option_type"],
   "required_source_columns": [
     "timestamp", "ticker", "expiry_date", "strike_price", "option_type",
-    "open", "high", "low", "close", "volume", "oi", "forward", "ttm",
-    "iv", "delta", "gamma", "theta", "vega"
+    "open", "high", "low", "close", "delta", "gamma", "theta", "vega"
   ],
+  "contract_mapped_source_columns": {
+    "volume": "volume.column",
+    "open_interest": "open_interest.column",
+    "iv": "iv.column",
+    "ttm": "iv.ttm_column",
+    "spot": "underlying.spot_column",
+    "forward": "underlying.forward_column",
+    "bid": "quotes.bid_column",
+    "ask": "quotes.ask_column",
+    "lot_size": "contracts.lot_size_column"
+  },
   "conditionally_required_columns": {
     "delayed_availability": ["available_at"],
     "minute_replication_moneyness": ["spot"],

@@ -2,10 +2,12 @@
   "schema_version": 1,
   "required_run_manifest_fields": [
     "run_id", "created_at_utc", "code_sha", "code_dirty", "source_contract_sha256",
-    "query_identity", "query_parameters_sha256",
+    "query_identity", "query_parameters_sha256", "resolved_source_columns",
+    "admission_status", "admission_blockers", "admission_warnings",
     "input_sha256", "input_rows", "normalized_rows", "minute_rows",
     "first_timestamp", "last_timestamp", "duplicate_key_rows", "complete_minutes",
-    "source_contract_status", "resolution_lane"
+    "source_contract_status", "resolution_lane", "authorizes_strategy_execution",
+    "required_next_gate"
   ],
   "required_coverage_stages": [
     "input_rows", "valid_contract_rows", "valid_iv_rows", "complete_minutes",

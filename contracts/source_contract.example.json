@@ -11,7 +11,9 @@
     "first_session": "PENDING",
     "last_session": "PENDING",
     "missing_sessions_documented": false,
-    "all_required_expiries_requested": false
+    "all_required_expiries_requested": false,
+    "minimum_expiries_per_session": "PENDING",
+    "expiry_inventory_evidence": "PENDING"
   },
   "timestamp": {
     "timezone": "Asia/Kolkata",

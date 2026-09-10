@@ -4,30 +4,163 @@
   "direction": "long",
   "recipient_side": "PE",
   "families": [
-    {"id": "H5_F1", "source_side": "CE", "raw_sign": 1, "surface": "coherent", "source_dte": "31-60", "hold_minutes": 120},
-    {"id": "H5_F2", "source_side": "CE", "raw_sign": 1, "surface": "coherent", "source_dte": "0-30", "hold_minutes": 60},
-    {"id": "H5_F3", "source_side": "PE", "raw_sign": -1, "surface": "coherent", "source_dte": "0-30", "hold_minutes": 60},
-    {"id": "H5_F4", "source_side": "PE", "raw_sign": -1, "surface": "coherent", "source_dte": "31-60", "hold_minutes": 120},
-    {"id": "H5_F5", "source_side": "PE", "raw_sign": 1, "surface": "idiosyncratic", "source_dte": "31-60", "hold_minutes": 60}
+    {
+      "id": "H5_F1",
+      "source_side": "CE",
+      "raw_sign": 1,
+      "surface": "coherent",
+      "source_dte": "31-60",
+      "hold_minutes": 120
+    },
+    {
+      "id": "H5_F2",
+      "source_side": "CE",
+      "raw_sign": 1,
+      "surface": "coherent",
+      "source_dte": "0-30",
+      "hold_minutes": 60
+    },
+    {
+      "id": "H5_F3",
+      "source_side": "PE",
+      "raw_sign": -1,
+      "surface": "coherent",
+      "source_dte": "0-30",
+      "hold_minutes": 60
+    },
+    {
+      "id": "H5_F4",
+      "source_side": "PE",
+      "raw_sign": -1,
+      "surface": "coherent",
+      "source_dte": "31-60",
+      "hold_minutes": 120
+    },
+    {
+      "id": "H5_F5",
+      "source_side": "PE",
+      "raw_sign": 1,
+      "surface": "idiosyncratic",
+      "source_dte": "31-60",
+      "hold_minutes": 60
+    }
   ],
   "coverage": {
     "source_expiry_rank_min": 3,
     "source_dte_inclusive": true,
     "recipient_scope": "all_nonexpired_represented_contracts",
-    "recipient_sides": ["CE", "PE"],
-    "recipient_moneyness_bins": ["<-10%", "-10:-5%", "-5:-3%", "-3:-2%", "-2:-1%", "-1:1%", "1:2%", "2:3%", "3:5%", "5:10%", ">10%"],
-    "recipient_dte_bins": ["0-7d", "8-14d", "15-30d", "31-60d", "61-90d", "91-180d", ">180d"]
+    "recipient_sides": [
+      "CE",
+      "PE"
+    ],
+    "recipient_moneyness_bins": [
+      "<-10%",
+      "-10:-5%",
+      "-5:-3%",
+      "-3:-2%",
+      "-2:-1%",
+      "-1:1%",
+      "1:2%",
+      "2:3%",
+      "3:5%",
+      "5:10%",
+      ">10%"
+    ],
+    "recipient_dte_bins": [
+      "0-7d",
+      "8-14d",
+      "15-30d",
+      "31-60d",
+      "61-90d",
+      "91-180d",
+      ">180d"
+    ],
+    "source_expiry_rank_authority": "represented_whole_session_inventory",
+    "source_event_log_moneyness_formula": "ln(source_strike/spot_at_event)",
+    "source_event_log_moneyness_bounds": [
+      -0.01,
+      0.01
+    ],
+    "source_event_log_moneyness_bounds_inclusive": true,
+    "source_dte_definition": "calendar_days_at_event",
+    "source_dte_band_definitions": {
+      "0-30": "0 <= calendar_dte <= 30",
+      "31-60": "31 <= calendar_dte <= 60"
+    },
+    "recipient_log_moneyness_formula": "ln(recipient_strike/spot_at_source_event)",
+    "recipient_moneyness_bin_boundaries": {
+      "<-10%": "x < -0.10",
+      "-10:-5%": "-0.10 <= x < -0.05",
+      "-5:-3%": "-0.05 <= x < -0.03",
+      "-3:-2%": "-0.03 <= x < -0.02",
+      "-2:-1%": "-0.02 <= x < -0.01",
+      "-1:1%": "-0.01 <= x <= 0.01",
+      "1:2%": "0.01 < x <= 0.02",
+      "2:3%": "0.02 < x <= 0.03",
+      "3:5%": "0.03 < x <= 0.05",
+      "5:10%": "0.05 < x <= 0.10",
+      ">10%": "x > 0.10",
+      "unknown": "null_or_nonfinite_excluded"
+    },
+    "recipient_dte_definition": "calendar_days_at_source_event_minute",
+    "recipient_dte_bin_definitions": {
+      "0-7d": "0 <= recipient_calendar_dte <= 7",
+      "8-14d": "8 <= recipient_calendar_dte <= 14",
+      "15-30d": "15 <= recipient_calendar_dte <= 30",
+      "31-60d": "31 <= recipient_calendar_dte <= 60",
+      "61-90d": "61 <= recipient_calendar_dte <= 90",
+      "91-180d": "91 <= recipient_calendar_dte <= 180",
+      ">180d": "recipient_calendar_dte > 180"
+    },
+    "recipient_expiry_before_scheduled_exit": "excluded_before_selection_after_dte_bin_assignment"
   },
   "views": {
-    "source_policies": ["frozen_source", "overlapping"],
-    "reservation_overlays": ["recipient_contract", "underlying_wide"],
+    "source_policies": [
+      "frozen_source",
+      "overlapping"
+    ],
+    "reservation_overlays": [
+      "recipient_contract",
+      "underlying_wide"
+    ],
     "entry": "t_plus_1_exact_native_close",
-    "non_overlap": "sign_pooled_per_contract_session_horizon_before_endpoint_availability_and_subgroup_selection"
+    "non_overlap": "sign_pooled_per_contract_session_horizon_before_endpoint_availability_and_subgroup_selection",
+    "primary_exit_policy": "scheduled_exact_same_session_close",
+    "primary_missing_exit_policy": "retain_unresolved_and_stop_that_family_book",
+    "sensitivity_exit_policy": "next_available_same_session_close",
+    "sensitivity_max_delay_minutes": null,
+    "scheduled_exit_is_metadata_not_event_identity": true,
+    "scheduling_order": [
+      "source_calibration",
+      "source_event_admission",
+      "sign_pooled_non_overlap",
+      "family_scope",
+      "recipient_scope",
+      "entry_availability",
+      "exit_availability"
+    ]
   },
   "provenance": {
     "repository": "Goyal-Dedhia-Capital/firm-research-workspace",
     "study": "researchers/naman_goyal/studies/2026/hyp_0005__iv_shock_reversal--long_option_response--close_response",
     "family_definition": "validation/engine_coverage_storage_v2/src/lib.rs",
     "coverage_definition": "VALIDATION_PLAN_V1.md"
+  },
+  "recipient_selection": {
+    "metadata_clock": "source_event_minute",
+    "eligibility": [
+      "recipient_side",
+      "exact_moneyness_bin",
+      "recipient_dte_bin",
+      "finite_log_moneyness",
+      "expiry_minute_gte_scheduled_exit_minute"
+    ],
+    "priority": [
+      "earliest_expiry",
+      "minimum_abs_distance_from_bin_target",
+      "contract_id"
+    ],
+    "endpoint_availability_may_affect_selection": false,
+    "entry_or_exit_missing_policy": "retain_selected_recipient_and_report_missingness_no_replacement"
   }
 }

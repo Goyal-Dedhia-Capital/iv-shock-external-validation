@@ -1,0 +1,18 @@
+{
+  "calendar_version": 1,
+  "status": "PENDING",
+  "identity": "PENDING",
+  "timezone": "Asia/Kolkata",
+  "authority": "PENDING",
+  "regular_session": {
+    "open": "09:15:00",
+    "close": "15:30:00",
+    "eligible_last_minute": "15:29:00",
+    "intraday_breaks": []
+  },
+  "holding_clock": "elapsed_calendar_minutes",
+  "holidays": [],
+  "special_sessions": [],
+  "missing_session_policy": "fail_closed",
+  "observed_quotes_may_define_session_bounds": false
+}

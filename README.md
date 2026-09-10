@@ -41,20 +41,30 @@ uv run pytest -q
 cp contracts/source_contract.example.json contracts/source_contract.local.json
 # Resolve every PENDING field in the local file. The local file is gitignored.
 
-uv run python python/run_local.py \
+scripts/preflight \
   --input /absolute/path/to/one-second-export.csv \
   --source-contract contracts/source_contract.local.json \
   --cache-dir /absolute/path/to/local-cache \
   --manifest-out outputs/manifests/first-session.json
 ```
 
-The first real-data output is a one-session schema and minute-aggregation audit.
-The detector and sequential-book run begins only after this audit passes.
+The command returns `READY`, `READY_WITH_WARNINGS`, or `BLOCKED` and always
+records the exact coverage reasons in its immutable manifest. A malformed
+contract or source returns one compact `FAILED` JSON error instead of a Python
+traceback. The data owner fixes only the named mapping or source issue; the firm
+strategy owner is responsible for all detector, causality, scheduling, and
+accounting verification.
+
+Before any multi-session strategy run, the firm strategy owner also freezes a
+versioned exchange calendar from `contracts/exchange_calendar.example.json`.
+Observed quote timestamps must never be used to infer holidays or special
+session boundaries.
 
 ## Validation order
 
 1. One session, full represented expiry inventory: schema and causal resampling.
-2. One session: S0, one H3 family, and one H5 family.
+2. Firm-owned verification: S0, one H3 family, and one H5 family on synthetic
+   causal fixtures plus the admitted external session.
 3. Five chronological sessions: checkpoint/restart and book conservation.
 4. Sixty prior sessions: calibration-state audit.
 5. Full 2024, then 2025, then available 2026.
@@ -74,6 +84,7 @@ concentration. Planned or pilot-only historical variants remain labelled as such
 - H3/H5 detector and family registry: implemented as specifications.
 - Friend-owned API adapter: interface only; private API implementation pending.
 - One-second source contract: pending data-owner completion.
-- Real-data audit and detector parity: pending the private source.
+- Real-data admission audit and firm-owned detector verification: pending the
+  private source.
 
 Private external validation of H3/H5 IV-shock research on independent high-frequency option data

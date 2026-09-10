@@ -15,7 +15,6 @@ def resample_one_minute(frame: pl.LazyFrame, *, expected_cadence_seconds: int = 
         pl.col("timestamp").dt.truncate("1m").alias("minute")
     )
     last_fields = [
-        "available_at",
         "spot",
         "forward",
         "bid",
@@ -42,12 +41,29 @@ def resample_one_minute(frame: pl.LazyFrame, *, expected_cadence_seconds: int = 
             .then(pl.col("volume").sum())
             .otherwise(None)
             .alias("volume"),
+            pl.col("available_at").max().alias("available_at"),
             *[pl.col(name).drop_nulls().last().alias(name) for name in last_fields],
             pl.len().alias("source_rows"),
             pl.col("timestamp").n_unique().alias("observed_seconds"),
+            (
+                (pl.col("timestamp").dt.nanosecond() == 0)
+                & ((pl.col("timestamp").dt.second() % expected_cadence_seconds) == 0)
+            )
+            .all()
+            .alias("cadence_slots_aligned"),
         )
         .with_columns(
-            (pl.col("observed_seconds") == expected_observations).alias("minute_complete")
+            (pl.col("observed_seconds") == expected_observations).alias("cadence_complete"),
+            (pl.col("available_at") <= pl.col("minute") + pl.duration(minutes=1)).alias(
+                "availability_complete"
+            ),
+        )
+        .with_columns(
+            (
+                pl.col("cadence_complete")
+                & pl.col("cadence_slots_aligned")
+                & pl.col("availability_complete")
+            ).alias("minute_complete")
         )
         .sort(["minute", "contract_id"])
     )
