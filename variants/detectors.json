@@ -1,0 +1,64 @@
+{
+  "registry_version": 1,
+  "common_policy": {
+    "replication_formation": "1m",
+    "calibration_sessions": 60,
+    "minimum_support": 200,
+    "quiet_gap_minutes": 15,
+    "calibration_clock": "strictly_prior_sessions_only",
+    "raw_sign_axis": "sign_of_raw_calendar_iv_innovation",
+    "score_sign_stored_separately": true,
+    "surface_classifier": "inherited_h3_fixed_classifier"
+  },
+  "detectors": [
+    {
+      "id": "S0",
+      "definition": "(x - prior_median) / (1.4826 * prior_MAD)",
+      "threshold": "absolute_score_gte_2",
+      "historical_status": "completed_descriptive_baseline"
+    },
+    {
+      "id": "S1",
+      "definition": "(x - prior_mean) / prior_sample_SD_ddof_1",
+      "threshold": "prior_only_rate_matched_to_S0",
+      "historical_status": "implemented_but_no_completed_full_grid"
+    },
+    {
+      "id": "S2",
+      "definition": "empirical_midrank_tail_score_of_raw_innovation",
+      "threshold": "prior_only_rate_matched_to_S0",
+      "historical_status": "implemented_but_no_completed_full_grid"
+    },
+    {
+      "id": "S3",
+      "definition": "pre_update_per_contract_EWMA_score_half_life_60_eligible_minutes",
+      "threshold": "prior_only_rate_matched_to_S0",
+      "historical_status": "implemented_but_no_completed_full_grid"
+    },
+    {
+      "id": "S4",
+      "definition": "robust_score_of_log(calendar_iv_t/calendar_iv_t_minus_1)",
+      "threshold": "prior_only_rate_matched_to_S0",
+      "historical_status": "implemented_but_no_completed_full_grid"
+    },
+    {
+      "id": "S5",
+      "definition": "robust_score_of_x_minus_leave_one_out_neighbor_median",
+      "neighborhood": {
+        "same_expiry": true,
+        "same_option_side": true,
+        "forward_log_moneyness_radius": 0.02,
+        "minimum_neighbors": 3
+      },
+      "threshold": "prior_only_rate_matched_to_S0",
+      "historical_status": "implemented_but_no_completed_full_grid"
+    }
+  ],
+  "provenance": {
+    "repository": "Goyal-Dedhia-Capital/firm-research-workspace",
+    "study": "researchers/naman_goyal/studies/2026/hyp_0005__iv_shock_reversal--long_option_response--close_response",
+    "definition_file": "VALIDATION_PLAN_V1.md",
+    "implementation_file": "validation/iv_shocks_v1/rust/src/lib.rs",
+    "warning": "The source worktree contained uncommitted H5 changes; definitions are specifications, not a copied binary identity."
+  }
+}

@@ -1,0 +1,16 @@
+.DS_Store
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.local-data/
+local-data/
+cache/
+contracts/*.local.json
+outputs/**/*.parquet
+outputs/**/*.csv
+outputs/**/*.jsonl
+outputs/**/*.arrow
+outputs/**/*.ipc
+outputs/**/checkpoint*

@@ -1,0 +1,42 @@
+{
+  "registry_version": 1,
+  "status_semantics": "artifact_present records lineage only and is not a profitability or completion claim",
+  "h3": [
+    ["EXP004", "better_iv_event_definitions"],
+    ["EXP005", "iv_reversal_tradability"],
+    ["EXP006", "long_horizon_response"],
+    ["EXP007", "dual_source_close_response"],
+    ["EXP008", "merged_raw_pchip_close_response"],
+    ["EXP009", "canonical_release_shock_response"],
+    ["EXP010", "short_mechanism_attribution"],
+    ["EXP011", "cross_expiry_relative"],
+    ["EXP012", "funded_five_shorts"],
+    ["EXP013", "sequential_five_shorts"],
+    ["EXP014", "ten_family_features"],
+    ["EXP015", "multileg_structures"],
+    ["EXP016", "tier_confirmation"],
+    ["EXP017", "liquidity_price_response"],
+    ["EXP018", "entry_price_sensitivity"],
+    ["EXP019", "funded_best_family_portfolio"],
+    ["EXP020", "funded_spot_filter"],
+    ["EXP021", "walkforward_sizing"],
+    ["EXP022", "atm_distance_sensitivity"],
+    ["EXP023", "near_atm_liquidity_features"],
+    ["EXP024", "native_geometry_liquidity_frontier"],
+    ["EXP025", "feature_risk_sizing"],
+    ["EXP026", "portfolio_construction"],
+    ["EXP027", "funded_recommended_portfolio"],
+    ["EXP028", "funded_recommended_portfolio_overlapping"],
+    ["EXP029", "all_event_overlap_research"],
+    ["EXP030", "funded_ranked_overlap"],
+    ["EXP031", "score_admission"],
+    ["EXP032", "final_score_gated_book"],
+    ["EXP033", "groww_capital_admission"],
+    ["EXP034", "entry_volume_liquidity"]
+  ],
+  "h5": [
+    ["EXP001", "baseline_long_and_chain_response"],
+    ["VALIDATION_S0", "completed_S0_baseline_and_family_layers"],
+    ["VALIDATION_S1_S5", "implemented_or_piloted_no_completed_full_grid"]
+  ]
+}

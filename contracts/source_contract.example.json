@@ -1,0 +1,71 @@
+{
+  "contract_version": 1,
+  "dataset_id": "PENDING",
+  "provider": "PENDING",
+  "symbol": "NIFTY",
+  "query": {
+    "identity": "PENDING",
+    "parameters": "PENDING"
+  },
+  "coverage": {
+    "first_session": "PENDING",
+    "last_session": "PENDING",
+    "missing_sessions_documented": false,
+    "all_required_expiries_requested": false
+  },
+  "timestamp": {
+    "timezone": "Asia/Kolkata",
+    "meaning": "PENDING",
+    "availability_equals_timestamp": "PENDING",
+    "available_at_column": null,
+    "expected_cadence_seconds": 1,
+    "session_open": "09:15:00",
+    "session_close": "PENDING"
+  },
+  "quotes": {
+    "buy_price_meaning": "PENDING",
+    "sell_price_meaning": "PENDING",
+    "bid_column": "PENDING",
+    "ask_column": "PENDING",
+    "top_of_book": "PENDING",
+    "observed_not_modeled": "PENDING",
+    "unchanged_quote_policy": "PENDING"
+  },
+  "volume": {
+    "column": "volume",
+    "meaning": "PENDING",
+    "negative_one_meaning": "PENDING"
+  },
+  "open_interest": {
+    "column": "oi",
+    "meaning": "PENDING"
+  },
+  "iv": {
+    "column": "iv",
+    "price_basis": "PENDING",
+    "model": "PENDING",
+    "rate_policy": "PENDING",
+    "dividend_policy": "PENDING",
+    "ttm_column": "ttm",
+    "ttm_units": "PENDING",
+    "expiry_timestamp": "PENDING",
+    "solver_failure_representation": "PENDING"
+  },
+  "underlying": {
+    "spot_column": "PENDING",
+    "forward_column": "forward",
+    "forward_method": "PENDING"
+  },
+  "contracts": {
+    "provider_contract_id_column": null,
+    "lot_size_column": null,
+    "lot_size_authority": "PENDING"
+  },
+  "resampling": {
+    "second_rows_are": "PENDING",
+    "missing_second_policy": "no_cross_minute_fill",
+    "volume_aggregation": "PENDING",
+    "oi_aggregation": "last_non_null",
+    "quote_aggregation": "last_non_null_within_minute"
+  }
+}
