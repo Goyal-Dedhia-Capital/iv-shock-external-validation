@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+uv run ruff check python tests
+uv run pytest -q
+python3 -m json.tool contracts/input_schema.json >/dev/null
+python3 -m json.tool contracts/output_schema.json >/dev/null
+python3 -m json.tool contracts/source_contract.example.json >/dev/null
+for path in variants/*.json; do
+  python3 -m json.tool "$path" >/dev/null
+done

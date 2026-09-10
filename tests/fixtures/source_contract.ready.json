@@ -1,0 +1,68 @@
+{
+  "contract_version": 1,
+  "dataset_id": "synthetic_fixture_v1",
+  "provider": "fixture_observed",
+  "symbol": "NIFTY",
+  "query": {
+    "identity": "fixture_query_v1",
+    "parameters": {"interval": "1s", "expiry": "all", "include_greeks": true}
+  },
+  "coverage": {
+    "first_session": "2026-09-08",
+    "last_session": "2026-09-08",
+    "missing_sessions_documented": true,
+    "all_required_expiries_requested": true
+  },
+  "timestamp": {
+    "timezone": "Asia/Kolkata",
+    "meaning": "completed_one_second_bar_end",
+    "availability_equals_timestamp": true,
+    "available_at_column": null,
+    "expected_cadence_seconds": 1,
+    "session_open": "09:15:00",
+    "session_close": "15:29:59"
+  },
+  "quotes": {
+    "buy_price_meaning": "observed_best_bid",
+    "sell_price_meaning": "observed_best_ask",
+    "bid_column": "buy_price",
+    "ask_column": "sell_price",
+    "top_of_book": true,
+    "observed_not_modeled": true,
+    "unchanged_quote_policy": "explicit_snapshot_each_second"
+  },
+  "volume": {
+    "column": "volume",
+    "meaning": "incremental_contracts_in_second_bar",
+    "negative_one_meaning": "missing"
+  },
+  "open_interest": {"column": "oi", "meaning": "observed_snapshot"},
+  "iv": {
+    "column": "iv",
+    "price_basis": "close",
+    "model": "fixture_model",
+    "rate_policy": "fixture_constant",
+    "dividend_policy": "fixture_constant",
+    "ttm_column": "ttm",
+    "ttm_units": "calendar_days",
+    "expiry_timestamp": "15:30:00 Asia/Kolkata",
+    "solver_failure_representation": "null_iv_and_greeks"
+  },
+  "underlying": {
+    "spot_column": "spot",
+    "forward_column": "forward",
+    "forward_method": "fixture_observed"
+  },
+  "contracts": {
+    "provider_contract_id_column": null,
+    "lot_size_column": "lot_size",
+    "lot_size_authority": "fixture_only"
+  },
+  "resampling": {
+    "second_rows_are": "one_second_ohlc_bars",
+    "missing_second_policy": "no_cross_minute_fill",
+    "volume_aggregation": "sum_incremental",
+    "oi_aggregation": "last_non_null",
+    "quote_aggregation": "last_non_null_within_minute"
+  }
+}

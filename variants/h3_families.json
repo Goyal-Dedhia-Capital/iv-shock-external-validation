@@ -1,0 +1,34 @@
+{
+  "registry_version": 1,
+  "hypothesis": "H3",
+  "direction": "short",
+  "surface": "coherent",
+  "recipient_side": "CE",
+  "hold_minutes": 120,
+  "families": [
+    {"id": "H3_F1", "source_side": "CE", "raw_sign": 1, "source_dte": "0-30", "formation_lane": "observed", "recipient_relative_bin": "observed|positive"},
+    {"id": "H3_F2", "source_side": "CE", "raw_sign": 1, "source_dte": "31-60", "formation_lane": "observed", "recipient_relative_bin": "observed|positive"},
+    {"id": "H3_F3", "source_side": "CE", "raw_sign": 1, "source_dte": "31-60", "formation_lane": "pchip", "recipient_relative_bin": "pchip|positive"},
+    {"id": "H3_F4", "source_side": "CE", "raw_sign": 1, "source_dte": "0-30", "formation_lane": "pchip", "recipient_relative_bin": "pchip|positive"},
+    {"id": "H3_F5", "source_side": "CE", "raw_sign": -1, "source_dte": "0-30", "formation_lane": "pchip", "recipient_relative_bin": "pchip|negative"}
+  ],
+  "timing": {
+    "signal": "sealed_minute_t",
+    "entry": "native_close_t_plus_1_minute",
+    "exit": "first_allowed_same_session_close_at_or_after_scheduled_horizon",
+    "same_minute_order": "closes_before_opens"
+  },
+  "sequential": {
+    "independent_books": 5,
+    "capacity": "one_active_position_per_family",
+    "priority": ["entry_minute", "family_id", "contract_id", "source_unit_id"],
+    "candidate_dedup_key": ["family_id", "contract_id", "entry_minute", "exit_minute"],
+    "endpoint_availability_may_affect_selection": false
+  },
+  "provenance": {
+    "repository": "Goyal-Dedhia-Capital/firm-research-workspace",
+    "study": "researchers/naman_goyal/studies/2026/hyp_0003__iv_shock_reversal--option_premium_reversal--modeled_execution",
+    "family_definition": "experiments/exp_012_funded_five_shorts/README.md",
+    "sequential_definition": "experiments/exp_013_sequential_five_shorts/README.md"
+  }
+}

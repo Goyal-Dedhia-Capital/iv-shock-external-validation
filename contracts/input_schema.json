@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "row_key": ["timestamp", "ticker", "expiry_date", "strike_price", "option_type"],
+  "required_source_columns": [
+    "timestamp", "ticker", "expiry_date", "strike_price", "option_type",
+    "open", "high", "low", "close", "volume", "oi", "forward", "ttm",
+    "iv", "delta", "gamma", "theta", "vega"
+  ],
+  "conditionally_required_columns": {
+    "delayed_availability": ["available_at"],
+    "minute_replication_moneyness": ["spot"],
+    "quote_execution": ["bid", "ask"],
+    "historical_sizing": ["lot_size"]
+  },
+  "canonical_columns": [
+    "session_date", "timestamp", "available_at", "ticker", "contract_id",
+    "expiry", "strike", "option_type", "spot", "forward", "open", "high",
+    "low", "close", "bid", "ask", "volume", "open_interest", "calendar_ttm",
+    "calendar_iv", "delta", "gamma", "theta", "vega", "model_status",
+    "data_source", "lot_size"
+  ],
+  "null_policy": "Preserve nulls and emit coverage reasons; never replace with zero or future/backfilled values.",
+  "duplicate_policy": "Duplicate source row keys fail closed.",
+  "pchip_authority": "research_and_accounting_only_never_execution"
+}

@@ -1,0 +1,33 @@
+{
+  "registry_version": 1,
+  "hypothesis": "H5",
+  "direction": "long",
+  "recipient_side": "PE",
+  "families": [
+    {"id": "H5_F1", "source_side": "CE", "raw_sign": 1, "surface": "coherent", "source_dte": "31-60", "hold_minutes": 120},
+    {"id": "H5_F2", "source_side": "CE", "raw_sign": 1, "surface": "coherent", "source_dte": "0-30", "hold_minutes": 60},
+    {"id": "H5_F3", "source_side": "PE", "raw_sign": -1, "surface": "coherent", "source_dte": "0-30", "hold_minutes": 60},
+    {"id": "H5_F4", "source_side": "PE", "raw_sign": -1, "surface": "coherent", "source_dte": "31-60", "hold_minutes": 120},
+    {"id": "H5_F5", "source_side": "PE", "raw_sign": 1, "surface": "idiosyncratic", "source_dte": "31-60", "hold_minutes": 60}
+  ],
+  "coverage": {
+    "source_expiry_rank_min": 3,
+    "source_dte_inclusive": true,
+    "recipient_scope": "all_nonexpired_represented_contracts",
+    "recipient_sides": ["CE", "PE"],
+    "recipient_moneyness_bins": ["<-10%", "-10:-5%", "-5:-3%", "-3:-2%", "-2:-1%", "-1:1%", "1:2%", "2:3%", "3:5%", "5:10%", ">10%"],
+    "recipient_dte_bins": ["0-7d", "8-14d", "15-30d", "31-60d", "61-90d", "91-180d", ">180d"]
+  },
+  "views": {
+    "source_policies": ["frozen_source", "overlapping"],
+    "reservation_overlays": ["recipient_contract", "underlying_wide"],
+    "entry": "t_plus_1_exact_native_close",
+    "non_overlap": "sign_pooled_per_contract_session_horizon_before_endpoint_availability_and_subgroup_selection"
+  },
+  "provenance": {
+    "repository": "Goyal-Dedhia-Capital/firm-research-workspace",
+    "study": "researchers/naman_goyal/studies/2026/hyp_0005__iv_shock_reversal--long_option_response--close_response",
+    "family_definition": "validation/engine_coverage_storage_v2/src/lib.rs",
+    "coverage_definition": "VALIDATION_PLAN_V1.md"
+  }
+}

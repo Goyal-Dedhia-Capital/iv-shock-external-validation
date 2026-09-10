@@ -1,0 +1,27 @@
+{
+  "registry_version": 1,
+  "replication_lane": {
+    "resolution": "causally_sealed_1m",
+    "detectors": ["S0"],
+    "directions": ["long", "short"],
+    "source_sides": ["CE", "PE"],
+    "raw_signs": [-1, 1],
+    "surfaces": ["coherent", "idiosyncratic"],
+    "source_dte": ["0-30", "31-60"],
+    "recipient_sides": ["CE", "PE"],
+    "holds": [30, 60, 90, 120, 180, "session_end"],
+    "price_views": ["native_close", "observed_only_close", "confirmed_bid_ask"],
+    "overlap_views": ["overlapping", "frozen_source", "recipient_contract", "underlying_wide", "five_independent_books", "combined_portfolio"]
+  },
+  "extension_lane": {
+    "detectors": ["S1", "S2", "S3", "S4", "S5"],
+    "resolutions": ["causally_sealed_1m", "rolling_60s_evaluated_each_second", "adjacent_1s"],
+    "entry_delay_seconds": [1, 5, 15, 60],
+    "label": "new_external_sensitivity_not_historical_replication"
+  },
+  "calibration": {
+    "sessions": 60,
+    "minimum_support": 200,
+    "strictly_prior": true
+  }
+}
