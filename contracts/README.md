@@ -30,3 +30,20 @@ local alias cannot silently select a different field.
 strategy owner must replace its `PENDING` authority and identity and enumerate
 holidays and special sessions before chronological books run. The data owner is
 not responsible for validating detector or book logic.
+
+Holiday entries are `YYYY-MM-DD` strings. Each special-session entry must use:
+
+```json
+{
+  "date": "YYYY-MM-DD",
+  "open": "HH:MM:00",
+  "close": "HH:MM:00",
+  "eligible_last_minute": "HH:MM:00",
+  "intraday_breaks": [{"start": "HH:MM:00", "end": "HH:MM:00"}]
+}
+```
+
+Set `status` to `READY` only after the authority, identity, holidays, special
+sessions, and regular hours are complete. The Rust launcher rehashes this exact
+file and rejects wrong dates, weekends, holidays, breaks, and close-boundary
+minutes before strategy state changes.

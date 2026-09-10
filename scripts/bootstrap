@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 uv sync --dev
+cargo fetch --manifest-path rust/Cargo.toml --locked

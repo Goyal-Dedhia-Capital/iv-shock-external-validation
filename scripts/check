@@ -5,6 +5,10 @@ uv run pytest -q
 python3 -m json.tool contracts/input_schema.json >/dev/null
 python3 -m json.tool contracts/output_schema.json >/dev/null
 python3 -m json.tool contracts/source_contract.example.json >/dev/null
+python3 -m json.tool contracts/exchange_calendar.example.json >/dev/null
 for path in variants/*.json; do
   python3 -m json.tool "$path" >/dev/null
 done
+cargo fmt --manifest-path rust/Cargo.toml --all -- --check
+cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets -- -D warnings
+cargo test --manifest-path rust/Cargo.toml --workspace --quiet

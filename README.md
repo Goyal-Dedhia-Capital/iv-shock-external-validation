@@ -36,7 +36,7 @@ replications of the frozen minute-clock studies.
 
 ```bash
 uv sync --dev
-uv run pytest -q
+scripts/check
 
 cp contracts/source_contract.example.json contracts/source_contract.local.json
 # Resolve every PENDING field in the local file. The local file is gitignored.
@@ -47,6 +47,23 @@ scripts/preflight \
   --cache-dir /absolute/path/to/local-cache \
   --manifest-out outputs/manifests/first-session.json
 ```
+
+After the firm accepts that manifest and freezes a `READY` calendar, launch a
+runner through the binding guard (never call a release binary directly):
+
+```bash
+scripts/run-strategy \
+  --runner detector \
+  --calendar /absolute/path/to/exchange-calendar.json \
+  --source-contract contracts/source_contract.local.json \
+  --stage research
+```
+
+Use `--runner books` for full-chain scheduling/recipient views and `--runner
+policy` for the feedback-aware ten-family single-leg lifecycle. The launcher
+rejects placeholders, the complete stage-specific source contract, or dirty
+strategy code and binds the Git revision,
+calendar SHA-256, and source-contract SHA-256 into the run bundle identity.
 
 The command returns `READY`, `READY_WITH_WARNINGS`, or `BLOCKED` and always
 records the exact coverage reasons in its immutable manifest. A malformed
@@ -81,10 +98,18 @@ concentration. Planned or pilot-only historical variants remain labelled as such
 ## Current status
 
 - Private repository scaffold: implemented.
-- H3/H5 detector and family registry: implemented as specifications.
+- H3/H5 detector and family registries: committed specifications enforced by
+  the Rust policy boundary.
+- Frozen S0 detector and six-detector Rust core: implemented.
+- All ten fixed H3/H5 family boundaries: implemented and tested.
+- Feedback-aware single-leg lifecycle with ten independent books: implemented.
+- Typed S0 detector-to-policy evidence matching, bundle-bound restart, and
+  same-session unresolved-position quarantine: implemented.
 - Friend-owned API adapter: interface only; private API implementation pending.
 - One-second source contract: pending data-owner completion.
-- Real-data admission audit and firm-owned detector verification: pending the
-  private source.
+- Real-data admission audit is pending the private source. Historical tape
+  parity is not assigned to the data owner; strategy correctness is enforced by
+  deterministic expected-answer, adversarial, lifecycle, and restart tests in
+  `scripts/check`.
 
 Private external validation of H3/H5 IV-shock research on independent high-frequency option data
