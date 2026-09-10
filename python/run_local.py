@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import uuid
 from pathlib import Path
 
 import polars as pl
 from ivshock_validation.audit import audit_frames
-from ivshock_validation.contracts import load_source_contract, validate_source_contract
+from ivshock_validation.contracts import (
+    ContractError,
+    load_source_contract,
+    validate_source_contract,
+)
 from ivshock_validation.io import scan_source
 from ivshock_validation.manifest import (
     git_dirty,
@@ -47,7 +52,7 @@ def main() -> None:
         expected_cadence_seconds=contract["timestamp"]["expected_cadence_seconds"],
     ).collect()
     minutes = minute_audit.filter(pl.col("minute_complete"))
-    audit = audit_frames(normalized, minute_audit, contract)
+    audit = audit_frames(normalized, minute_audit, contract, stage=args.stage)
 
     run_id = f"schema-audit-{uuid.uuid4()}"
     run_dir = args.cache_dir / run_id
@@ -70,11 +75,24 @@ def main() -> None:
             "source_contract_sha256": contract_sha,
             "query_identity": contract["query"]["identity"],
             "query_parameters_sha256": sha256_json(contract["query"]["parameters"]),
+            "resolved_source_columns": {
+                "volume": contract["volume"]["column"],
+                "open_interest": contract["open_interest"]["column"],
+                "iv": contract["iv"]["column"],
+                "ttm": contract["iv"]["ttm_column"],
+                "spot": contract["underlying"]["spot_column"],
+                "forward": contract["underlying"]["forward_column"],
+                "bid": contract["quotes"].get("bid_column"),
+                "ask": contract["quotes"].get("ask_column"),
+                "lot_size": contract["contracts"].get("lot_size_column"),
+            },
             "input_name": args.input.name,
             "input_sha256": input_sha,
             "input_rows": input_rows,
-            "source_contract_status": f"ready_for_{args.stage}",
+            "source_contract_status": f"validated_for_{args.stage}",
             "resolution_lane": "causally_sealed_1m_replication_preparation",
+            "authorizes_strategy_execution": False,
+            "required_next_gate": "firm_owned_exchange_calendar_and_rust_decision_invariant_tests",
             "cache_outputs": {
                 "run_directory": run_dir.name,
                 "normalized_seconds_name": seconds_path.name,
@@ -88,7 +106,27 @@ def main() -> None:
         },
     )
     print(json.dumps({"run_id": run_id, **audit}, indent=2, sort_keys=True))
+    if audit["admission_status"] == "BLOCKED":
+        raise SystemExit(2)
+
+
+def cli() -> None:
+    try:
+        main()
+    except (ContractError, FileExistsError, ValueError, pl.exceptions.PolarsError) as exc:
+        print(
+            json.dumps(
+                {
+                    "admission_status": "FAILED",
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+        )
+        raise SystemExit(2) from None
 
 
 if __name__ == "__main__":
-    main()
+    cli()

@@ -15,31 +15,88 @@
       "id": "S0",
       "definition": "(x - prior_median) / (1.4826 * prior_MAD)",
       "threshold": "absolute_score_gte_2",
-      "historical_status": "completed_descriptive_baseline"
+      "historical_status": "completed_descriptive_baseline",
+      "external_validation_gate": "READY_FOR_SYNTHETIC_IMPLEMENTATION_TESTS",
+      "exact_policy": {
+        "calibration_sessions": 60,
+        "minimum_support": 200,
+        "fallback_precedence": [
+          "L0",
+          "L1",
+          "L2",
+          "L3"
+        ],
+        "fallback_keys": {
+          "L0": [
+            "formation",
+            "quality",
+            "dte",
+            "time_bucket",
+            "moneyness",
+            "option_type"
+          ],
+          "L1": [
+            "formation",
+            "quality",
+            "dte",
+            "time_bucket",
+            "moneyness"
+          ],
+          "L2": [
+            "formation",
+            "quality",
+            "dte",
+            "time_bucket",
+            "option_type"
+          ],
+          "L3": [
+            "formation",
+            "quality",
+            "dte",
+            "time_bucket"
+          ]
+        },
+        "zero_or_nonfinite_mad": "unsupported_invalid_scale_no_score",
+        "qualification": "absolute_score_greater_than_or_equal_to_2",
+        "quiet_gap_scope": [
+          "detector_id",
+          "contract_id"
+        ],
+        "quiet_gap_minutes": 15,
+        "quiet_gap_boundary": "current_minute_minus_previous_before_quiet_qualified_minute_greater_than_or_equal_to_15",
+        "quiet_gap_clock_update": "every_before_quiet_qualified_event_even_when_gap_rejects_it",
+        "quiet_gap_reset": "each_session",
+        "zero_raw_sign": "score_and_diagnostic_allowed_and_may_update_quiet_clock_but_ineligible_for_plus_or_minus_family",
+        "unsupported_behavior": "emit_diagnostic_with_no_signal_or_trade_intent"
+      }
     },
     {
       "id": "S1",
       "definition": "(x - prior_mean) / prior_sample_SD_ddof_1",
       "threshold": "prior_only_rate_matched_to_S0",
-      "historical_status": "implemented_but_no_completed_full_grid"
+      "historical_status": "implemented_but_no_completed_full_grid",
+      "external_validation_gate": "BLOCKED_UNTIL_RATE_MATCHING_POPULATION_TIES_AND_NO_THRESHOLD_POLICY_ARE_FROZEN"
     },
     {
       "id": "S2",
       "definition": "empirical_midrank_tail_score_of_raw_innovation",
       "threshold": "prior_only_rate_matched_to_S0",
-      "historical_status": "implemented_but_no_completed_full_grid"
+      "historical_status": "implemented_but_no_completed_full_grid",
+      "external_validation_gate": "BLOCKED_UNTIL_RATE_MATCHING_POPULATION_TIES_AND_NO_THRESHOLD_POLICY_ARE_FROZEN"
     },
     {
       "id": "S3",
       "definition": "pre_update_per_contract_EWMA_score_half_life_60_eligible_minutes",
       "threshold": "prior_only_rate_matched_to_S0",
-      "historical_status": "implemented_but_no_completed_full_grid"
+      "historical_status": "implemented_but_no_completed_full_grid",
+      "external_validation_gate": "BLOCKED_UNTIL_RATE_MATCHING_POPULATION_TIES_AND_NO_THRESHOLD_POLICY_ARE_FROZEN"
     },
     {
       "id": "S4",
       "definition": "robust_score_of_log(calendar_iv_t/calendar_iv_t_minus_1)",
       "threshold": "prior_only_rate_matched_to_S0",
-      "historical_status": "implemented_but_no_completed_full_grid"
+      "historical_status": "implemented_but_no_completed_full_grid",
+      "external_validation_gate": "BLOCKED_UNTIL_RATE_MATCHING_POPULATION_TIES_AND_NO_THRESHOLD_POLICY_ARE_FROZEN"
     },
     {
       "id": "S5",
@@ -51,7 +108,8 @@
         "minimum_neighbors": 3
       },
       "threshold": "prior_only_rate_matched_to_S0",
-      "historical_status": "implemented_but_no_completed_full_grid"
+      "historical_status": "implemented_but_no_completed_full_grid",
+      "external_validation_gate": "BLOCKED_UNTIL_RATE_MATCHING_POPULATION_TIES_AND_NO_THRESHOLD_POLICY_ARE_FROZEN"
     }
   ],
   "provenance": {

@@ -25,9 +25,10 @@ it is one minute, one date, one expiry, and has no prior-session calibration.
 2. **One-session preparation.** Normalize the full expiry inventory and causally
    seal one-minute bars. Audit row conservation, missingness, quote coverage,
    expiry inventory, and timestamps.
-3. **S0 parity slice.** Run one H3 and one H5 family through the persistent
-   decision boundary. Verify scores, event identity, recipient selection,
-   schedules, fees, and uninterrupted/resumed parity.
+3. **Firm-owned S0 verification slice.** Run one H3 and one H5 family through
+   the persistent decision boundary. Verify scores, event identity, recipient
+   selection, schedules, fees, determinism, and uninterrupted/resumed equality.
+   The data owner does not reproduce or approve historical result tapes.
 4. **Five-session slice.** Exercise strictly chronological state and five
    independent books. No full-period launch follows a failed lifecycle or
    conservation invariant.
@@ -66,6 +67,8 @@ after-cost statistic is recomputed.
 
 - Source contract and query identity committed; secrets and raw data absent.
 - Exact input/config/code hashes in every run manifest.
+- A versioned exchange calendar, including holidays and special sessions, is
+  frozen before sequential runs; observed quotes never define session bounds.
 - Causality, restart, dedup, ordering, fill/fee and conservation tests pass.
 - Replication and extension identities never mix.
 - S1-S5 retain their historical no-completed-full-grid label.

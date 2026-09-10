@@ -6,29 +6,117 @@
   "recipient_side": "CE",
   "hold_minutes": 120,
   "families": [
-    {"id": "H3_F1", "source_side": "CE", "raw_sign": 1, "source_dte": "0-30", "formation_lane": "observed", "recipient_relative_bin": "observed|positive"},
-    {"id": "H3_F2", "source_side": "CE", "raw_sign": 1, "source_dte": "31-60", "formation_lane": "observed", "recipient_relative_bin": "observed|positive"},
-    {"id": "H3_F3", "source_side": "CE", "raw_sign": 1, "source_dte": "31-60", "formation_lane": "pchip", "recipient_relative_bin": "pchip|positive"},
-    {"id": "H3_F4", "source_side": "CE", "raw_sign": 1, "source_dte": "0-30", "formation_lane": "pchip", "recipient_relative_bin": "pchip|positive"},
-    {"id": "H3_F5", "source_side": "CE", "raw_sign": -1, "source_dte": "0-30", "formation_lane": "pchip", "recipient_relative_bin": "pchip|negative"}
+    {
+      "id": "H3_F1",
+      "source_side": "CE",
+      "raw_sign": 1,
+      "source_dte": "0-30",
+      "formation_lane": "observed",
+      "recipient_relative_bin": "observed|positive"
+    },
+    {
+      "id": "H3_F2",
+      "source_side": "CE",
+      "raw_sign": 1,
+      "source_dte": "31-60",
+      "formation_lane": "observed",
+      "recipient_relative_bin": "observed|positive"
+    },
+    {
+      "id": "H3_F3",
+      "source_side": "CE",
+      "raw_sign": 1,
+      "source_dte": "31-60",
+      "formation_lane": "pchip",
+      "recipient_relative_bin": "pchip|positive"
+    },
+    {
+      "id": "H3_F4",
+      "source_side": "CE",
+      "raw_sign": 1,
+      "source_dte": "0-30",
+      "formation_lane": "pchip",
+      "recipient_relative_bin": "pchip|positive"
+    },
+    {
+      "id": "H3_F5",
+      "source_side": "CE",
+      "raw_sign": -1,
+      "source_dte": "0-30",
+      "formation_lane": "pchip",
+      "recipient_relative_bin": "pchip|negative"
+    }
   ],
   "timing": {
     "signal": "sealed_minute_t",
     "entry": "native_close_t_plus_1_minute",
-    "exit": "first_allowed_same_session_close_at_or_after_scheduled_horizon",
+    "primary_exit_policy": "scheduled_exact_same_session_close",
+    "primary_missing_exit_policy": "retain_unresolved_and_stop_that_family_book",
+    "sensitivity_exit_policy": "next_available_same_session_close",
+    "sensitivity_max_delay_minutes": null,
     "same_minute_order": "closes_before_opens"
   },
   "sequential": {
     "independent_books": 5,
     "capacity": "one_active_position_per_family",
-    "priority": ["entry_minute", "family_id", "contract_id", "source_unit_id"],
-    "candidate_dedup_key": ["family_id", "contract_id", "entry_minute", "exit_minute"],
-    "endpoint_availability_may_affect_selection": false
+    "priority": [
+      "entry_minute",
+      "family_id",
+      "contract_id",
+      "source_unit_id"
+    ],
+    "candidate_dedup_key": [
+      "family_id",
+      "source_event_id",
+      "recipient_contract_id",
+      "entry_minute"
+    ],
+    "endpoint_availability_may_affect_selection": false,
+    "scheduled_exit_is_metadata_not_identity": true,
+    "scheduling_order": [
+      "source_calibration",
+      "source_event_admission",
+      "sign_pooled_non_overlap",
+      "family_scope",
+      "recipient_scope",
+      "entry_availability",
+      "exit_availability"
+    ]
   },
   "provenance": {
     "repository": "Goyal-Dedhia-Capital/firm-research-workspace",
     "study": "researchers/naman_goyal/studies/2026/hyp_0003__iv_shock_reversal--option_premium_reversal--modeled_execution",
     "family_definition": "experiments/exp_012_funded_five_shorts/README.md",
     "sequential_definition": "experiments/exp_013_sequential_five_shorts/README.md"
+  },
+  "coverage": {
+    "source_expiry_rank_min": 3,
+    "source_expiry_rank_authority": "represented_whole_session_inventory",
+    "source_event_log_moneyness_formula": "ln(source_strike/spot_at_event)",
+    "source_event_log_moneyness_bounds": [
+      -0.01,
+      0.01
+    ],
+    "source_event_log_moneyness_bounds_inclusive": true,
+    "source_dte_definition": "calendar_days_at_event",
+    "source_dte_bands": {
+      "0-30": "0 <= calendar_dte <= 30",
+      "31-60": "31 <= calendar_dte <= 60"
+    }
+  },
+  "recipient_relative_definition": {
+    "formula": "raw_sign * (recipient_event_iv - recipient_pre_iv - source_peer_median)",
+    "source_peer_median": "leave_one_out_median_of_observed_raw_Dhan_IV_moves",
+    "source_peer_keys": [
+      "event_minute",
+      "expiry",
+      "option_type"
+    ],
+    "recipient_universe": "all_represented_nonexpired_contracts_at_source_event_minute",
+    "formation_lane_meaning": "recipient_event_and_pre_IV_provenance_observed_or_pchip_as_family_declares",
+    "pchip_peer_reference": "observed_raw_Dhan_peers_only",
+    "sign_axis": "source_raw_shock_sign",
+    "missing_peer_policy": "ineligible",
+    "atm_usage": "diagnostic_only_not_recipient_relative_formula"
   }
 }

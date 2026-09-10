@@ -2,33 +2,52 @@
   "registry_version": 1,
   "historical_status": "provisional_historical_research_candidate_not_broker_live_approved",
   "scope": "downstream_candidate_policy_distinct_from_the_primary_full_2024_replication",
-  "evaluation_window": ["2024-07-01", "2025-12-31"],
+  "evaluation_window": [
+    "2024-07-01",
+    "2025-12-31"
+  ],
   "warmup_end": "2024-06-30",
   "families": [
     {
       "id": "H3_F4",
       "basket": "sell_one_outward_1_CE",
-      "causal_filters": ["spot_return_30m_pct_lte_0", "event_minimum_leg_volume_lte_0"]
+      "causal_filters": [
+        "spot_return_30m_pct_lte_0",
+        "event_minimum_leg_volume_lte_0"
+      ]
     },
     {
       "id": "H5_F1",
       "basket": "buy_selected_PE_sell_PE_500_points_lower",
-      "causal_filters": ["spot_return_30m_pct_lte_0"]
+      "causal_filters": [
+        "spot_return_30m_pct_lte_0"
+      ]
     },
     {
       "id": "H5_F2",
       "basket": "buy_selected_PE_sell_PE_300_points_lower",
-      "causal_filters": ["spot_return_30m_pct_lte_0", "observed_risk_reversal_gt_0", "event_minimum_leg_volume_lte_0"]
+      "causal_filters": [
+        "spot_return_30m_pct_lte_0",
+        "observed_risk_reversal_gt_0",
+        "event_minimum_leg_volume_lte_0"
+      ]
     },
     {
       "id": "H5_F3",
       "basket": "buy_selected_PE_sell_PE_300_points_lower",
-      "causal_filters": ["spot_return_30m_pct_lte_0", "event_minimum_leg_volume_lte_0"]
+      "causal_filters": [
+        "spot_return_30m_pct_lte_0",
+        "event_minimum_leg_volume_lte_0"
+      ]
     },
     {
       "id": "H5_F5",
       "basket": "buy_selected_PE_sell_PE_500_points_lower",
-      "causal_filters": ["spot_return_30m_pct_lte_0", "observed_risk_reversal_gt_0", "event_minimum_leg_volume_lte_0"]
+      "causal_filters": [
+        "spot_return_30m_pct_lte_0",
+        "observed_risk_reversal_gt_0",
+        "event_minimum_leg_volume_lte_0"
+      ]
     }
   ],
   "walk_forward_score": {
@@ -36,7 +55,10 @@
     "training": "expanding_and_strictly_prior_to_test_month",
     "ridge_penalty": 10.0,
     "minimum_training_labels": 60,
-    "target_winsorization": [0.025, 0.975],
+    "target_winsorization": [
+      0.025,
+      0.975
+    ],
     "admission": "predicted_net_rupees_gt_prior_training_67th_percentile_fitted_score",
     "sizing": "one_official_lot_non_compounding",
     "external_validation_rule": "refit_only_on_friends_strictly_prior_data_never_copy_future_fitted_scores"
@@ -69,12 +91,16 @@
     "compounding": false,
     "margin_ceiling_bps": 5000,
     "historical_cost_label": "groww_pinned_2026_sensitivity",
-    "external_primary": "confirmed_bid_ask_plus_date_effective_costs"
+    "external_primary": "confirmed_bid_ask_plus_date_effective_costs",
+    "cost_authority": "modeled_sensitivity_not_broker_certified",
+    "margin_authority": "modeled_proxy_not_broker_certified",
+    "funded_claim_allowed": false
   },
   "provenance": {
     "source": "H3_EXP033_MODEL",
     "model_file": "experiments/exp_033_groww_capital_admission/MODEL.md",
     "candidate_file": "experiments/exp_032_final_score_gated_book/strategy-candidate.json",
     "warning": "Historical model bundle is not stored in Git; external validation must fit independently on prior data."
-  }
+  },
+  "basket_rules_status": "not_executable_until_contract_selection_leg_matching_missing_strike_and_dual_leg_availability_rules_are_frozen"
 }

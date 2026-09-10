@@ -16,11 +16,6 @@ BASE_REQUIRED = {
     "high",
     "low",
     "close",
-    "volume",
-    "oi",
-    "forward",
-    "ttm",
-    "iv",
     "delta",
     "gamma",
     "theta",
@@ -34,7 +29,14 @@ def _pending(value: Any) -> bool:
 
 def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFrame:
     schema = frame.collect_schema()
-    missing = sorted(BASE_REQUIRED - set(schema.names()))
+    mapped_columns = {
+        contract["volume"]["column"],
+        contract["open_interest"]["column"],
+        contract["iv"]["column"],
+        contract["iv"]["ttm_column"],
+        contract["underlying"]["forward_column"],
+    }
+    missing = sorted((BASE_REQUIRED | mapped_columns) - set(schema.names()))
     if missing:
         raise ValueError("missing required source columns: " + ", ".join(missing))
 
@@ -71,8 +73,8 @@ def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFr
     if not _pending(bid_column) and not _pending(ask_column):
         if bid_column not in schema or ask_column not in schema:
             raise ValueError("declared bid/ask columns are missing")
-        bid_expr = pl.col(bid_column).cast(pl.Float64, strict=False)
-        ask_expr = pl.col(ask_column).cast(pl.Float64, strict=False)
+        bid_expr = pl.col(bid_column).cast(pl.Float64, strict=True)
+        ask_expr = pl.col(ask_column).cast(pl.Float64, strict=True)
 
     provider_contract_id = contract["contracts"].get("provider_contract_id_column")
     if provider_contract_id:
@@ -95,22 +97,24 @@ def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFr
     if lot_column:
         if lot_column not in schema:
             raise ValueError("declared lot-size column is missing")
-        lot_expr = pl.col(lot_column).cast(pl.Int64, strict=False)
+        lot_expr = pl.col(lot_column).cast(pl.Int64, strict=True)
 
     negative_one_is_missing = contract["volume"]["negative_one_meaning"] == "missing"
-    volume_expr = pl.col("volume").cast(pl.Float64, strict=False)
+    volume_expr = pl.col(contract["volume"]["column"]).cast(pl.Float64, strict=True)
     if negative_one_is_missing:
         volume_expr = pl.when(volume_expr == -1).then(None).otherwise(volume_expr)
 
     normalized = frame.with_columns(
         timestamp_expr.alias("timestamp"),
         expiry_expr.alias("expiry"),
-        pl.col("strike_price").cast(pl.Float64).alias("strike"),
+        pl.col("strike_price").cast(pl.Float64, strict=True).alias("strike"),
         pl.col("option_type").str.to_uppercase().alias("option_type"),
-        pl.col(spot_column).cast(pl.Float64, strict=False).alias("spot"),
-        pl.col("oi").cast(pl.Float64, strict=False).alias("open_interest"),
-        pl.col("ttm").cast(pl.Float64, strict=False).alias("calendar_ttm"),
-        pl.col("iv").cast(pl.Float64, strict=False).alias("calendar_iv"),
+        pl.col(spot_column).cast(pl.Float64, strict=True).alias("spot"),
+        pl.col(contract["open_interest"]["column"])
+        .cast(pl.Float64, strict=True)
+        .alias("open_interest"),
+        pl.col(contract["iv"]["ttm_column"]).cast(pl.Float64, strict=True).alias("calendar_ttm"),
+        pl.col(contract["iv"]["column"]).cast(pl.Float64, strict=True).alias("calendar_iv"),
         bid_expr.alias("bid"),
         ask_expr.alias("ask"),
         contract_id_expr.alias("contract_id"),
@@ -136,8 +140,10 @@ def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFr
         "strike",
         "option_type",
         "spot",
-        pl.col("forward").cast(pl.Float64, strict=False),
-        *[pl.col(name).cast(pl.Float64, strict=False) for name in ("open", "high", "low", "close")],
+        pl.col(contract["underlying"]["forward_column"])
+        .cast(pl.Float64, strict=True)
+        .alias("forward"),
+        *[pl.col(name).cast(pl.Float64, strict=True) for name in ("open", "high", "low", "close")],
         "bid",
         "ask",
         "volume",
@@ -145,7 +151,7 @@ def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFr
         "calendar_ttm",
         "calendar_iv",
         *[
-            pl.col(name).cast(pl.Float64, strict=False)
+            pl.col(name).cast(pl.Float64, strict=True)
             for name in ("delta", "gamma", "theta", "vega")
         ],
         "model_status",
