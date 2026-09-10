@@ -1,0 +1,24 @@
+[package]
+name = "exp019-funded-best-family-portfolio"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "Proprietary"
+publish = false
+
+[dependencies]
+backtest-contracts = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/contracts" }
+backtest-engine = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/engine" }
+backtest-research-process = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/research-process" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+thiserror = "2.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+nursery = "deny"

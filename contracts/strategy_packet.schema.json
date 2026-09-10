@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gdc.iv-shock.strategy-packet.v1",
+  "title": "IV-shock strategy research payload",
+  "oneOf": [
+    { "$ref": "#/$defs/minute" },
+    { "$ref": "#/$defs/session_end" }
+  ],
+  "$defs": {
+    "leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_id", "side", "quantity"],
+      "properties": {
+        "contract_id": { "type": "string", "minLength": 1 },
+        "side": { "enum": ["BUY", "SELL"] },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "option_type": { "type": ["string", "null"], "enum": ["CE", "PE", null] },
+        "strike": { "type": ["integer", "null"] },
+        "expiry": { "type": ["string", "null"] },
+        "expiry_minute": { "type": ["integer", "null"] },
+        "represented": { "type": ["boolean", "null"] }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id", "detector", "detector_score", "detector_threshold",
+        "detector_support", "detector_qualified_after_quiet", "book", "scenario",
+        "structure_id", "source_event_id", "source_contract_id", "source_side",
+        "source_raw_sign", "source_surface", "source_dte", "source_expiry_rank",
+        "source_log_moneyness", "recipient_side", "recipient_money_bin",
+        "recipient_log_moneyness", "recipient_dte_bin", "recipient_dte",
+        "recipient_expiry_minute", "recipient_represented", "session_end_minute",
+        "date", "event_minute", "entry_minute", "scheduled_exit_minute",
+        "contract_id", "quantity", "entry_eligible", "legs"
+      ],
+      "properties": {
+        "candidate_id": { "type": "string", "minLength": 1 },
+        "detector": { "const": "S0" },
+        "detector_score": { "type": "number" },
+        "detector_threshold": { "type": "number" },
+        "detector_support": { "type": "integer", "minimum": 0 },
+        "detector_qualified_after_quiet": { "type": "boolean" },
+        "book": { "enum": ["H3_F1", "H3_F2", "H3_F3", "H3_F4", "H3_F5", "H5_F1", "H5_F2", "H5_F3", "H5_F4", "H5_F5"] },
+        "scenario": { "type": "string", "minLength": 1 },
+        "structure_id": { "type": "string", "minLength": 1 },
+        "source_event_id": { "type": "string", "minLength": 1 },
+        "source_contract_id": { "type": "string", "minLength": 1 },
+        "source_side": { "enum": ["CE", "PE"] },
+        "source_raw_sign": { "enum": [-1, 1] },
+        "source_surface": { "enum": ["coherent", "idiosyncratic"] },
+        "source_dte": { "type": "integer", "minimum": 0 },
+        "source_expiry_rank": { "type": "integer", "minimum": 0 },
+        "source_log_moneyness": { "type": "number" },
+        "formation_lane": { "type": "string" },
+        "recipient_relative_bin": { "type": "string" },
+        "recipient_side": { "enum": ["CE", "PE"] },
+        "recipient_money_bin": { "type": "string" },
+        "recipient_log_moneyness": { "type": "number" },
+        "recipient_dte_bin": { "type": "string" },
+        "recipient_dte": { "type": "integer", "minimum": 0 },
+        "recipient_expiry_minute": { "type": "integer" },
+        "recipient_represented": { "type": "boolean" },
+        "session_end_minute": { "type": "integer" },
+        "date": { "type": "string", "format": "date" },
+        "event_minute": { "type": "integer" },
+        "entry_minute": { "type": "integer" },
+        "scheduled_exit_minute": { "type": "integer" },
+        "contract_id": { "type": "string", "minLength": 1 },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "official_lot_size": { "type": ["integer", "null"], "minimum": 1 },
+        "lot_authority": { "type": ["string", "null"] },
+        "entry_eligible": { "type": "boolean" },
+        "rank_score_micro": { "type": ["integer", "null"] },
+        "anchor_strike": { "type": ["integer", "null"] },
+        "atm_strike": { "type": ["integer", "null"] },
+        "represented_same_expiry_strikes": { "type": "array", "items": { "type": "integer" }, "uniqueItems": true },
+        "features": { "type": "object", "additionalProperties": { "type": ["number", "null"] } },
+        "legs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/leg" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "scenario": { "const": "final_candidate" } } },
+          "then": {
+            "required": ["recipient_expiry", "official_lot_size", "lot_authority", "rank_score_micro", "represented_same_expiry_strikes", "features"]
+          }
+        }
+      ]
+    },
+    "detector": {
+      "type": "object",
+      "required": ["detector", "score", "threshold", "threshold_support", "threshold_target", "threshold_selected", "threshold_ties", "prior_tail_support", "support", "qualified_before_quiet", "qualified_after_quiet"],
+      "properties": {
+        "detector": { "enum": ["S0", "S1", "S2", "S3", "S4", "S5"] },
+        "score": { "type": ["number", "null"] },
+        "threshold": { "type": ["number", "null"] },
+        "threshold_support": { "type": "integer", "minimum": 0 },
+        "threshold_target": { "type": "integer", "minimum": 0 },
+        "threshold_selected": { "type": "integer", "minimum": 0 },
+        "threshold_ties": { "type": "integer", "minimum": 0 },
+        "prior_absolute_tail_probability": { "type": ["number", "null"] },
+        "prior_tail_support": { "type": "integer", "minimum": 0 },
+        "empirical_two_sided_tail_probability": { "type": ["number", "null"] },
+        "support": { "type": "integer", "minimum": 0 },
+        "calibration_level": { "type": ["string", "null"] },
+        "qualified_before_quiet": { "type": "boolean" },
+        "qualified_after_quiet": { "type": "boolean" },
+        "reason": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract_id", "ts_minute", "raw_iv_sign", "inherited_sign", "detectors"],
+      "properties": {
+        "contract_id": { "type": "string", "minLength": 1 },
+        "ts_minute": { "type": "integer" },
+        "raw_iv_sign": { "enum": [-1, 1] },
+        "inherited_sign": { "type": ["integer", "null"], "enum": [-1, 1, null] },
+        "detectors": { "type": "array", "items": { "$ref": "#/$defs/detector" } }
+      }
+    },
+    "minute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "minute", "session_date", "candidates", "detector_diagnostics"],
+      "properties": {
+        "kind": { "const": "minute" },
+        "minute": { "type": "integer" },
+        "bar_minute": { "type": ["integer", "null"] },
+        "session_date": { "type": "string", "format": "date" },
+        "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+        "detector_diagnostics": { "type": "array", "items": { "$ref": "#/$defs/diagnostic" } }
+      }
+    },
+    "session_end": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "session_date", "session_end_minute"],
+      "properties": {
+        "kind": { "const": "session_end" },
+        "session_date": { "type": "string", "format": "date" },
+        "session_end_minute": { "type": "integer" }
+      }
+    }
+  }
+}

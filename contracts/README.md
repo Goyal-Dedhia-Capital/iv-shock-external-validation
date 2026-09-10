@@ -26,6 +26,13 @@ Provider column names are resolved only through the mappings in the source
 contract. The preflight records that resolved mapping in its manifest so a
 local alias cannot silently select a different field.
 
+The normalized adapter-to-policy JSON contract is fully specified by
+`strategy_packet.schema.json`; its enclosing persistent request/response wire
+protocol is `research_protocol.schema.json`. Final-portfolio packets must also provide the
+event-time chain evidence on every leg (`expiry_minute`, `represented`), the
+represented same-expiry strike inventory, and the source-hashed official lot
+authority. The Rust policy revalidates those facts before emitting an intent.
+
 `exchange_calendar.example.json` is a separate strategy-run gate. The firm
 strategy owner must replace its `PENDING` authority and identity and enumerate
 holidays and special sessions before chronological books run. The data owner is

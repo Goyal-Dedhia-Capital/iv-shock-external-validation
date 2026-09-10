@@ -306,6 +306,7 @@ fn count_inventory(
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct EventDiagnostic {
     pub contract_id: String,
     pub ts_minute: i64,
@@ -315,6 +316,7 @@ pub struct EventDiagnostic {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct DetectorDiagnostic {
     pub detector: Detector,
     pub score: Option<f64>,

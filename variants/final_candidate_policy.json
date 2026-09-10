@@ -100,7 +100,14 @@
     "source": "H3_EXP033_MODEL",
     "model_file": "experiments/exp_033_groww_capital_admission/MODEL.md",
     "candidate_file": "experiments/exp_032_final_score_gated_book/strategy-candidate.json",
-    "warning": "Historical model bundle is not stored in Git; external validation must fit independently on prior data."
+    "warning": "The SHA-pinned historical reference bundle is stored only for exact transfer diagnostics; any external refit must use strictly prior friend-data labels under a new model identity."
   },
-  "basket_rules_status": "not_executable_until_contract_selection_leg_matching_missing_strike_and_dual_leg_availability_rules_are_frozen"
+  "basket_rules_status": "executable_rust_policy_with_exact_geometry_filters_and_reference_monthly_score_bundle",
+  "execution_entrypoint": "scripts/run-strategy --runner policy --policy-config-json <final config> --model-bundle models/exp032_reference_model_bundle.json",
+  "remaining_external_inputs": [
+    "causally sealed S0 diagnostics",
+    "entry-time represented-chain inventory",
+    "confirmed executable quotes for every leg",
+    "engine-owned fees margin fills and accounting"
+  ]
 }

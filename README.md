@@ -23,14 +23,17 @@ replications of the frozen minute-clock studies.
 
 ## Ownership boundary
 
-- The data owner implements `python/marketdata_adapter.py`, completes
-  `contracts/source_contract.example.json`, and runs all proprietary data
-  access locally.
+- The data owner exports proprietary data outside this checkout, completes an
+  ignored local source contract, and runs all private data access locally.
 - The normalized feeder owns timestamps, source provenance, contract identity,
   resampling, and coverage.
 - The persistent strategy process owns causal detector state and emits canonical
   trade intents.
 - The execution engine owns fills, fees, margin, positions, and accounting.
+
+The two standalone historical policies compile against minimal source snapshots
+of their exact published engine revisions under `vendor/`; this avoids a hidden
+cross-repository credential dependency. No engine binary or run output is stored.
 
 ## First local run
 
@@ -61,14 +64,15 @@ scripts/run-strategy \
 
 Use `--runner books` for full-chain scheduling/recipient views and `--runner
 policy` for the feedback-aware ten-family single-leg lifecycle. The launcher
-rejects placeholders, the complete stage-specific source contract, or dirty
-strategy code and binds the Git revision,
+rejects placeholders or dirty strategy code, validates the complete
+stage-specific source contract, and binds the Git revision,
 calendar SHA-256, and source-contract SHA-256 into the run bundle identity.
 
-The command returns `READY`, `READY_WITH_WARNINGS`, or `BLOCKED` and always
-records the exact coverage reasons in its immutable manifest. A malformed
-contract or source returns one compact `FAILED` JSON error instead of a Python
-traceback. The data owner fixes only the named mapping or source issue; the firm
+The preflight command returns `READY`, `READY_WITH_WARNINGS`, or `BLOCKED` and
+records the exact coverage reasons in its immutable manifest. The strategy
+launcher instead streams one Rust `ResearchResponse` per input request. A
+malformed contract or source returns one compact `FAILED` JSON error instead
+of a Python traceback. The data owner fixes only the named mapping or source issue; the firm
 strategy owner is responsible for all detector, causality, scheduling, and
 accounting verification.
 
@@ -78,6 +82,11 @@ Observed quote timestamps must never be used to infer holidays or special
 session boundaries.
 
 ## Validation order
+
+Exact experiment definitions and commands are in
+[`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) and
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md). The three finalized historical strategy
+books have separate, runnable handoffs under [`experiments/`](experiments/README.md).
 
 1. One session, full represented expiry inventory: schema and causal resampling.
 2. Firm-owned verification: S0, one H3 family, and one H5 family on synthetic
@@ -105,11 +114,11 @@ concentration. Planned or pilot-only historical variants remain labelled as such
 - Feedback-aware single-leg lifecycle with ten independent books: implemented.
 - Typed S0 detector-to-policy evidence matching, bundle-bound restart, and
   same-session unresolved-position quarantine: implemented.
-- Friend-owned API adapter: interface only; private API implementation pending.
+- Final H3_F4 outward CE and H5 PE vertical structures, causal filters, and
+  frozen monthly score evaluation: implemented in the Rust policy.
+- Private API export remains data-owner code outside this repository.
 - One-second source contract: pending data-owner completion.
 - Real-data admission audit is pending the private source. Historical tape
   parity is not assigned to the data owner; strategy correctness is enforced by
   deterministic expected-answer, adversarial, lifecycle, and restart tests in
   `scripts/check`.
-
-Private external validation of H3/H5 IV-shock research on independent high-frequency option data

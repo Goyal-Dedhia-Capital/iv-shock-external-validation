@@ -39,6 +39,7 @@ def test_run_bundle_hash_binds_every_identity():
     assert baseline != run_bundle_hash("revision-2", "calendar", "source")
     assert baseline != run_bundle_hash("revision", "calendar-2", "source")
     assert baseline != run_bundle_hash("revision", "calendar", "source-2")
+    assert baseline != run_bundle_hash("revision", "calendar", "source", "model")
 
 
 def test_strategy_launch_rejects_nonpending_but_incomplete_source(tmp_path):

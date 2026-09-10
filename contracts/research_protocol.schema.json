@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gdc.generic-backtest.v1",
+  "title": "Persistent research process request or response",
+  "oneOf": [
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/response" }
+  ],
+  "$defs": {
+    "money": { "type": "integer" },
+    "side": { "enum": ["BUY", "SELL"] },
+    "fill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instrument_id", "side", "quantity", "price", "fee"],
+      "properties": {
+        "instrument_id": { "type": "string" },
+        "side": { "$ref": "#/$defs/side" },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "price": { "$ref": "#/$defs/money" },
+        "fee": { "$ref": "#/$defs/money" }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent_id", "strategy_position_id", "status", "fills", "reason"],
+      "properties": {
+        "intent_id": { "type": "string" },
+        "strategy_position_id": { "type": "string" },
+        "status": { "enum": ["FILLED", "PARTIALLY_FILLED", "REJECTED", "DEFERRED"] },
+        "fills": { "type": "array", "items": { "$ref": "#/$defs/fill" } },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy_position_id", "instrument_id", "quantity", "average_price", "mark_price", "realized_pnl", "unrealized_pnl"],
+      "properties": {
+        "strategy_position_id": { "type": "string" },
+        "instrument_id": { "type": "string" },
+        "quantity": { "type": "integer" },
+        "average_price": { "$ref": "#/$defs/money" },
+        "mark_price": { "$ref": "#/$defs/money" },
+        "realized_pnl": { "$ref": "#/$defs/money" },
+        "unrealized_pnl": { "$ref": "#/$defs/money" }
+      }
+    },
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cash", "reserved_margin", "realized_pnl", "unrealized_pnl", "fees_paid", "equity", "positions"],
+      "properties": {
+        "cash": { "$ref": "#/$defs/money" },
+        "reserved_margin": { "$ref": "#/$defs/money" },
+        "realized_pnl": { "$ref": "#/$defs/money" },
+        "unrealized_pnl": { "$ref": "#/$defs/money" },
+        "fees_paid": { "$ref": "#/$defs/money" },
+        "equity": { "$ref": "#/$defs/money" },
+        "positions": { "type": "array", "items": { "$ref": "#/$defs/position" } }
+      }
+    },
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "outcomes", "account", "blockers"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 0 },
+        "outcomes": { "type": "array", "items": { "$ref": "#/$defs/outcome" } },
+        "account": { "$ref": "#/$defs/account" },
+        "blockers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instrument_id", "bid", "ask", "mark", "observed_at_ns", "available_at_ns", "source_id", "allowed_uses"],
+      "properties": {
+        "instrument_id": { "type": "string" },
+        "bid": { "type": ["integer", "null"] },
+        "ask": { "type": ["integer", "null"] },
+        "mark": { "type": ["integer", "null"] },
+        "observed_at_ns": { "type": "integer" },
+        "available_at_ns": { "type": "integer" },
+        "source_id": { "type": "string" },
+        "allowed_uses": { "type": "array", "uniqueItems": true, "items": { "enum": ["EXECUTION", "ACCOUNTING", "MARGIN", "RESEARCH"] } }
+      }
+    },
+    "margin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_id", "basket_key", "required", "observed_at_ns", "available_at_ns", "source_id"],
+      "properties": {
+        "fact_id": { "type": "string" },
+        "basket_key": { "type": "string" },
+        "required": { "$ref": "#/$defs/money" },
+        "observed_at_ns": { "type": "integer" },
+        "available_at_ns": { "type": "integer" },
+        "source_id": { "type": "string" }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "event_id", "sequence", "decision_at_ns", "available_at_ns", "sealed_at_ns", "quotes", "margin_facts", "research_payload"],
+      "properties": {
+        "schema_version": { "const": "gdc.generic-backtest.v1" },
+        "event_id": { "type": "string" },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "decision_at_ns": { "type": "integer" },
+        "available_at_ns": { "type": "integer" },
+        "sealed_at_ns": { "type": "integer" },
+        "quotes": { "type": "object", "additionalProperties": { "$ref": "#/$defs/quote" } },
+        "margin_facts": { "type": "object", "additionalProperties": { "$ref": "#/$defs/margin" } },
+        "research_payload": { "type": "object" }
+      }
+    },
+    "intent_leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instrument_id", "side", "quantity", "limit_price"],
+      "properties": {
+        "instrument_id": { "type": "string" },
+        "side": { "$ref": "#/$defs/side" },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "limit_price": { "type": ["integer", "null"] }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "intent_id", "decision_id", "strategy_position_id", "basket_key", "action", "atomic", "legs", "lineage"],
+      "properties": {
+        "schema_version": { "const": "gdc.generic-backtest.v1" },
+        "intent_id": { "type": "string" },
+        "decision_id": { "type": "string" },
+        "strategy_position_id": { "type": "string" },
+        "basket_key": { "type": "string" },
+        "action": { "enum": ["OPEN", "CLOSE", "REDUCE", "FLATTEN"] },
+        "atomic": { "type": "boolean" },
+        "legs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/intent_leg" } },
+        "lineage": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "input", "state", "feedback", "sequence", "feedback_context_hash", "feedback_feature_hash"],
+      "properties": {
+        "schema_version": { "const": "gdc.generic-backtest.v1" },
+        "input": { "$ref": "#/$defs/event" },
+        "state": {},
+        "feedback": { "$ref": "#/$defs/feedback" },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "feedback_context_hash": { "type": "string" },
+        "feedback_feature_hash": { "type": "string" }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "artifact_consumed", "runner_id", "bundle_hash", "state", "actions"],
+      "properties": {
+        "schema_version": { "const": "gdc.generic-backtest.v1" },
+        "artifact_consumed": { "type": "boolean" },
+        "runner_id": { "type": "string" },
+        "bundle_hash": { "type": "string" },
+        "state": {},
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/intent" } }
+      }
+    }
+  }
+}

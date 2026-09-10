@@ -3,7 +3,7 @@ use std::path::Path;
 
 use backtest_contracts::ResearchRequest;
 use iv_shock_calendar_guard::CalendarGuard;
-use iv_shock_strategy_policy::{Config, Packet, Runner};
+use iv_shock_strategy_policy::{Config, ModelBundle, Packet, PolicyMode, Runner};
 use serde_json::Value;
 
 fn validate_calendar(guard: &CalendarGuard, request: &ResearchRequest) -> Result<(), String> {
@@ -47,6 +47,19 @@ fn validate_calendar(guard: &CalendarGuard, request: &ResearchRequest) -> Result
     Ok(())
 }
 
+fn apply_model(bundle: &ModelBundle, request: &mut ResearchRequest) -> Result<(), String> {
+    let mut packet: Packet = serde_json::from_value(request.input.research_payload.clone())
+        .map_err(|error| error.to_string())?;
+    if let Packet::Minute { candidates, .. } = &mut packet {
+        for candidate in candidates {
+            candidate.rank_score_micro = Some(bundle.score(candidate)?);
+        }
+    }
+    request.input.research_payload =
+        serde_json::to_value(packet).map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 fn main() {
     let calendar = std::env::var("IV_SHOCK_CALENDAR_PATH")
         .and_then(|path| std::env::var("IV_SHOCK_CALENDAR_SHA256").map(|hash| (path, hash)))
@@ -80,8 +93,25 @@ fn main() {
         (Some("--config-json"), Some(value), None) => Config::from_json_str(&value),
         _ => Err("usage: iv-shock-strategy-policy [--config-json JSON]".to_owned()),
     };
+    let mode = config.as_ref().ok().map(|value| value.mode);
     let mut runner = match config.map(Runner::new) {
         Ok(runner) => runner,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    let model = if mode == Some(PolicyMode::FinalCandidate) {
+        std::env::var("IV_SHOCK_MODEL_BUNDLE_PATH")
+            .and_then(|path| std::env::var("IV_SHOCK_MODEL_BUNDLE_SHA256").map(|hash| (path, hash)))
+            .map_err(|_| "final-candidate mode requires model bundle path and SHA-256".to_owned())
+            .and_then(|(path, hash)| ModelBundle::load(Path::new(&path), &hash))
+            .map(Some)
+    } else {
+        Ok(None)
+    };
+    let model = match model {
+        Ok(model) => model,
         Err(error) => {
             eprintln!("{error}");
             std::process::exit(2);
@@ -100,7 +130,10 @@ fn main() {
         };
         let response = match serde_json::from_str::<ResearchRequest>(&line)
             .map_err(|error| error.to_string())
-            .and_then(|request| {
+            .and_then(|mut request| {
+                if let Some(model) = &model {
+                    apply_model(model, &mut request)?;
+                }
                 validate_calendar(&calendar, &request)?;
                 Ok(request)
             })

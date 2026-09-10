@@ -13,6 +13,7 @@ iv-shock-decision = { path = "../iv_shock_core" }
 iv-shock-sequential-books = { path = "../sequential_books" }
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 
 [lints]
 workspace = true

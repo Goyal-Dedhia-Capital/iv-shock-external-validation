@@ -110,6 +110,7 @@ dependencies = [
  "iv-shock-sequential-books",
  "serde",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]

@@ -14,13 +14,221 @@ use iv_shock_decision::{Detector, EventDiagnostic};
 use iv_shock_sequential_books::{Candidate as SourceCandidate, matching_families};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use std::fs;
+use std::path::Path;
 
 pub const RUNNER_ID: &str = "iv-shock-h3-h5-strategy-policy-v1";
 pub const SCHEMA_VERSION: &str = "gdc.iv-shock.h3-h5-strategy-policy.v1";
 pub const MINUTE_NS: i64 = 60_000_000_000;
+pub const REFERENCE_MODEL_SHA256: &str =
+    "158d5bc92d2da250174649bfd1f1a4c7961d96bda14e9467f4adcb844ffb0b20";
 pub const FIXED_BOOKS: [&str; 10] = [
     "H3_F1", "H3_F2", "H3_F3", "H3_F4", "H3_F5", "H5_F1", "H5_F2", "H5_F3", "H5_F4", "H5_F5",
 ];
+
+pub const FINAL_FEATURES: [&str; 19] = [
+    "spot_return_30m_pct",
+    "observed_risk_reversal_moneyness_pp",
+    "structure_iv_change_5m_pp",
+    "structure_event_volume_min",
+    "structure_trailing15_volume_min",
+    "structure_price_age_minutes",
+    "recipient_abs_delta",
+    "calendar_dte",
+    "target_abs_atm_distance_points",
+    "iv_pp",
+    "momentum_fast_slow_logpct",
+    "moneyness",
+    "basket_event_delta",
+    "basket_event_gamma",
+    "basket_event_vega",
+    "basket_event_theta",
+    "source_calendar_dte",
+    "source_expiry_count",
+    "source_unit_count",
+];
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ModelFit {
+    pub beta: Vec<f64>,
+    pub book: String,
+    pub clip_high: Vec<f64>,
+    pub clip_low: Vec<f64>,
+    pub features: Vec<String>,
+    pub fit_month: String,
+    pub mean: Vec<f64>,
+    pub median: Vec<f64>,
+    pub missing_indicators: Vec<String>,
+    pub policy: String,
+    pub scale: Vec<f64>,
+    pub score_threshold_rupees: f64,
+    pub train_end_date: String,
+    pub train_n: usize,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ModelBundle {
+    pub schema: String,
+    pub start_date: String,
+    pub end_date: String,
+    pub warmup_end: String,
+    pub minimum_training_rows: usize,
+    pub ridge_penalty: f64,
+    pub target_winsor_quantiles: Vec<f64>,
+    pub score_gate: String,
+    pub fits: Vec<ModelFit>,
+}
+
+fn final_policy(book: &str) -> Option<&'static str> {
+    match book {
+        "H5_F1" => Some("spot_down"),
+        "H5_F2" | "H5_F5" => Some("spot_down_skew_pos_low_volume"),
+        "H3_F4" | "H5_F3" => Some("spot_down_low_volume"),
+        _ => None,
+    }
+}
+
+impl ModelBundle {
+    /// Load and bind an exact immutable monthly model bundle.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the file, hash, schema, or frozen policy differs.
+    pub fn load(path: &Path, expected_sha256: &str) -> Result<Self, String> {
+        let bytes = fs::read(path).map_err(|error| format!("model bundle read failed: {error}"))?;
+        let digest = format!("{:x}", Sha256::digest(&bytes));
+        if digest != expected_sha256 || expected_sha256 != REFERENCE_MODEL_SHA256 {
+            return Err("model bundle SHA-256 mismatch".to_owned());
+        }
+        let bundle: Self = serde_json::from_slice(&bytes)
+            .map_err(|error| format!("model bundle JSON is invalid: {error}"))?;
+        if bundle.schema != "gdc.exp032.monthly-ridge-bundle.v1"
+            || bundle.minimum_training_rows != 60
+            || bundle.ridge_penalty.to_bits() != 10.0_f64.to_bits()
+            || bundle.target_winsor_quantiles != [0.025, 0.975]
+            || bundle.start_date != "2024-07-01"
+            || bundle.end_date != "2025-12-31"
+            || bundle.warmup_end != "2024-06-30"
+            || bundle.score_gate
+                != "predicted_net_rupees > prior-training 67th-percentile fitted score"
+            || bundle.fits.len() != 90
+        {
+            return Err("model bundle policy differs from frozen EXP032".to_owned());
+        }
+        let months = [
+            "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12", "2025-01", "2025-02",
+            "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10",
+            "2025-11", "2025-12",
+        ];
+        let expected: BTreeSet<(String, String, String)> =
+            ["H3_F4", "H5_F1", "H5_F2", "H5_F3", "H5_F5"]
+                .into_iter()
+                .flat_map(|book| {
+                    months.into_iter().map(move |month| {
+                        (
+                            book.to_owned(),
+                            final_policy(book).unwrap_or("").to_owned(),
+                            month.to_owned(),
+                        )
+                    })
+                })
+                .collect();
+        let actual: BTreeSet<_> = bundle
+            .fits
+            .iter()
+            .map(|fit| (fit.book.clone(), fit.policy.clone(), fit.fit_month.clone()))
+            .collect();
+        let expected_features: Vec<String> =
+            FINAL_FEATURES.iter().map(|v| (*v).to_owned()).collect();
+        let expected_missing: Vec<String> = FINAL_FEATURES
+            .iter()
+            .map(|v| format!("{v}__missing"))
+            .collect();
+        if actual != expected
+            || bundle.fits.iter().any(|fit| {
+                fit.features != expected_features
+                    || fit.missing_indicators != expected_missing
+                    || fit.beta.len() != 39
+                    || [
+                        fit.median.len(),
+                        fit.clip_low.len(),
+                        fit.clip_high.len(),
+                        fit.mean.len(),
+                        fit.scale.len(),
+                    ] != [19; 5]
+                    || fit.train_n < 60
+            })
+        {
+            return Err("model bundle fit inventory differs from frozen EXP032".to_owned());
+        }
+        Ok(bundle)
+    }
+
+    /// Score one entry-known final candidate against its exact prior-month fit.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for missing fits, dates outside the bundle, or invalid
+    /// transforms and features.
+    pub fn score(&self, candidate: &Candidate) -> Result<i64, String> {
+        let month = candidate
+            .date
+            .get(..7)
+            .ok_or_else(|| "candidate date has no YYYY-MM month".to_owned())?;
+        if candidate.date < self.start_date || candidate.date > self.end_date {
+            return Err("candidate date lies outside the frozen model bundle".to_owned());
+        }
+        let policy = final_policy(&candidate.book)
+            .ok_or_else(|| "candidate book has no final policy".to_owned())?;
+        let fit = self
+            .fits
+            .iter()
+            .find(|fit| {
+                fit.book == candidate.book && fit.policy == policy && fit.fit_month == month
+            })
+            .ok_or_else(|| "candidate has no exact family-month model fit".to_owned())?;
+        let expected_features: Vec<String> = FINAL_FEATURES
+            .iter()
+            .map(|value| (*value).to_owned())
+            .collect();
+        if fit.features != expected_features
+            || fit.beta.len() != 39
+            || [
+                fit.median.len(),
+                fit.clip_low.len(),
+                fit.clip_high.len(),
+                fit.mean.len(),
+                fit.scale.len(),
+            ] != [19; 5]
+            || fit.train_n < self.minimum_training_rows
+            || fit.train_end_date.as_str() >= format!("{month}-01").as_str()
+        {
+            return Err("family-month fit violates the frozen causal schema".to_owned());
+        }
+        let mut prediction = fit.beta[0];
+        for (index, name) in FINAL_FEATURES.iter().enumerate() {
+            let raw = feature(candidate, name);
+            let filled = raw.unwrap_or(fit.median[index]);
+            let clipped = filled.clamp(fit.clip_low[index], fit.clip_high[index]);
+            let scale = fit.scale[index];
+            if !clipped.is_finite() || !scale.is_finite() || scale <= 0.0 {
+                return Err("family-month fit contains an invalid transform".to_owned());
+            }
+            prediction += ((clipped - fit.mean[index]) / scale) * fit.beta[index + 1];
+            prediction += f64::from(raw.is_none()) * fit.beta[index + 20];
+        }
+        let rank = ((prediction - fit.score_threshold_rupees) * 1_000_000.0).round();
+        if !rank.is_finite() {
+            return Err("model score is outside the supported range".to_owned());
+        }
+        format!("{rank:.0}")
+            .parse()
+            .map_err(|_| "model score is outside the supported range".to_owned())
+    }
+}
 
 fn book_rank(book: &str) -> Option<usize> {
     FIXED_BOOKS.iter().position(|fixed| *fixed == book)
@@ -167,9 +375,19 @@ fn default_scenarios() -> Vec<String> {
     vec!["baseline".to_owned()]
 }
 
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PolicyMode {
+    #[default]
+    Baseline,
+    FinalCandidate,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
+    #[serde(default)]
+    pub mode: PolicyMode,
     #[serde(default = "default_books")]
     pub books: Vec<String>,
     #[serde(default = "default_scenarios")]
@@ -180,8 +398,21 @@ impl Config {
     #[must_use]
     pub fn baseline() -> Self {
         Self {
+            mode: PolicyMode::Baseline,
             books: default_books(),
             scenarios: default_scenarios(),
+        }
+    }
+
+    #[must_use]
+    pub fn final_candidate() -> Self {
+        Self {
+            mode: PolicyMode::FinalCandidate,
+            books: ["H3_F4", "H5_F1", "H5_F2", "H5_F3", "H5_F5"]
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            scenarios: vec!["final_candidate".to_owned()],
         }
     }
 
@@ -209,6 +440,16 @@ impl Config {
                 return Err(format!("duplicate book {book}"));
             }
         }
+        if self.mode == PolicyMode::FinalCandidate
+            && self.books.iter().any(|book| {
+                !matches!(
+                    book.as_str(),
+                    "H3_F4" | "H5_F1" | "H5_F2" | "H5_F3" | "H5_F5"
+                )
+            })
+        {
+            return Err("final-candidate mode permits only its five frozen families".to_owned());
+        }
         let mut scenarios = BTreeSet::new();
         for scenario in &self.scenarios {
             if scenario.is_empty() || !scenarios.insert(scenario) {
@@ -231,6 +472,158 @@ pub struct Leg {
     pub contract_id: String,
     pub side: Side,
     pub quantity: u64,
+    #[serde(default)]
+    pub option_type: Option<String>,
+    #[serde(default)]
+    pub strike: Option<i64>,
+    #[serde(default)]
+    pub expiry: Option<String>,
+    #[serde(default)]
+    pub expiry_minute: Option<i64>,
+    #[serde(default)]
+    pub represented: Option<bool>,
+}
+
+fn final_structure_width(book: &str) -> Option<i64> {
+    match book {
+        "H5_F1" | "H5_F5" => Some(500),
+        "H5_F2" | "H5_F3" => Some(300),
+        _ => None,
+    }
+}
+
+fn validate_strike_inventory(strikes: &[i64]) -> Result<(), String> {
+    if strikes.iter().copied().collect::<BTreeSet<_>>().len() != strikes.len() {
+        return Err("represented same-expiry strike inventory contains duplicates".to_owned());
+    }
+    Ok(())
+}
+
+fn validate_final_structure(candidate: &Candidate) -> Result<(), String> {
+    if candidate.scenario != "final_candidate" || candidate.rank_score_micro.is_none() {
+        return Err("final candidate requires its scenario and walk-forward score".to_owned());
+    }
+    validate_strike_inventory(&candidate.represented_same_expiry_strikes)?;
+    let lot = candidate
+        .official_lot_size
+        .ok_or("missing official lot size")?;
+    if lot == 0
+        || candidate.lot_authority.as_deref().is_none_or(|authority| {
+            authority.is_empty() || authority.eq_ignore_ascii_case("PENDING")
+        })
+        || candidate.quantity != lot
+        || candidate.legs.iter().any(|leg| leg.quantity != lot)
+    {
+        return Err("final candidate must use one authoritative official lot".to_owned());
+    }
+    if candidate.book == "H3_F4" {
+        if candidate.structure_id != "outward_1_ce" || candidate.legs.len() != 1 {
+            return Err("H3_F4 requires one outward-1 CE leg".to_owned());
+        }
+        let leg = &candidate.legs[0];
+        let anchor = candidate.anchor_strike.ok_or("missing H3 anchor strike")?;
+        let atm = candidate.atm_strike.ok_or("missing H3 ATM strike")?;
+        let target = leg.strike.ok_or("missing H3 target strike")?;
+        if !candidate.represented_same_expiry_strikes.contains(&anchor) {
+            return Err("H3 anchor is absent from the represented event-time chain".to_owned());
+        }
+        let mut outward: Vec<i64> = candidate
+            .represented_same_expiry_strikes
+            .iter()
+            .copied()
+            .filter(|strike| {
+                if anchor < atm {
+                    *strike < anchor
+                } else {
+                    *strike > anchor
+                }
+            })
+            .collect();
+        outward.sort_by_key(|strike| ((strike - anchor).abs(), *strike));
+        if outward.first().copied() != Some(target)
+            || leg.side != Side::Sell
+            || leg.option_type.as_deref() != Some("CE")
+            || leg.expiry.as_deref().is_none_or(str::is_empty)
+            || leg.expiry.as_deref() != Some(candidate.recipient_expiry.as_str())
+            || leg.expiry_minute != Some(candidate.recipient_expiry_minute)
+            || leg.represented != Some(true)
+            || candidate.contract_id != leg.contract_id
+        {
+            return Err("H3_F4 leg is not the deterministic outward-1 CE short".to_owned());
+        }
+    } else {
+        let width = final_structure_width(&candidate.book)
+            .ok_or_else(|| "family is outside the final portfolio".to_owned())?;
+        if candidate.structure_id != format!("pe_vertical_down_{width}")
+            || candidate.legs.len() != 2
+        {
+            return Err("H5 final family requires its frozen two-leg PE vertical".to_owned());
+        }
+        let buy = &candidate.legs[0];
+        let sell = &candidate.legs[1];
+        if buy.side != Side::Buy
+            || sell.side != Side::Sell
+            || buy.option_type.as_deref() != Some("PE")
+            || sell.option_type.as_deref() != Some("PE")
+            || buy.expiry.is_none()
+            || buy.expiry != sell.expiry
+            || buy.expiry.as_deref() != Some(candidate.recipient_expiry.as_str())
+            || buy.expiry_minute != Some(candidate.recipient_expiry_minute)
+            || sell.expiry_minute != Some(candidate.recipient_expiry_minute)
+            || buy.represented != Some(true)
+            || sell.represented != Some(true)
+            || buy
+                .strike
+                .is_none_or(|strike| !candidate.represented_same_expiry_strikes.contains(&strike))
+            || sell
+                .strike
+                .is_none_or(|strike| !candidate.represented_same_expiry_strikes.contains(&strike))
+            || buy.quantity != sell.quantity
+            || buy
+                .strike
+                .zip(sell.strike)
+                .is_none_or(|(high, low)| high - low != width)
+            || candidate.contract_id != buy.contract_id
+            || candidate.quantity != buy.quantity
+        {
+            return Err(
+                "H5 vertical leg identity, expiry, width, side, or quantity differs".to_owned(),
+            );
+        }
+    }
+    Ok(())
+}
+
+fn feature(candidate: &Candidate, name: &str) -> Option<f64> {
+    candidate
+        .features
+        .get(name)
+        .copied()
+        .flatten()
+        .filter(|value| value.is_finite())
+}
+
+fn final_rejection_reason(candidate: &Candidate) -> Option<&'static str> {
+    if candidate.rank_score_micro.is_none_or(|score| score <= 0) {
+        return Some("walk_forward_score_not_positive");
+    }
+    if feature(candidate, "spot_return_30m_pct").is_none_or(|value| value > 0.0) {
+        return Some("spot_filter_failed_or_missing");
+    }
+    if matches!(
+        candidate.book.as_str(),
+        "H3_F4" | "H5_F2" | "H5_F3" | "H5_F5"
+    ) && feature(candidate, "structure_event_volume_min").is_none_or(|value| value > 0.0)
+    {
+        return Some("low_volume_filter_failed_or_missing");
+    }
+    if matches!(candidate.book.as_str(), "H5_F2" | "H5_F5")
+        && feature(candidate, "observed_risk_reversal_moneyness_pp")
+            .is_none_or(|value| value <= 0.0)
+    {
+        return Some("risk_reversal_filter_failed_or_missing");
+    }
+    None
 }
 
 /// Candidate fields are entry-known only.  In particular, no exit quote or
@@ -264,6 +657,8 @@ pub struct Candidate {
     pub recipient_log_moneyness: f64,
     pub recipient_dte_bin: String,
     pub recipient_dte: i32,
+    #[serde(default)]
+    pub recipient_expiry: String,
     pub recipient_expiry_minute: i64,
     pub recipient_represented: bool,
     pub session_end_minute: i64,
@@ -273,7 +668,19 @@ pub struct Candidate {
     pub scheduled_exit_minute: i64,
     pub contract_id: String,
     pub quantity: u64,
+    #[serde(default)]
+    pub official_lot_size: Option<u64>,
+    #[serde(default)]
+    pub lot_authority: Option<String>,
     pub entry_eligible: bool,
+    #[serde(default)]
+    pub rank_score_micro: Option<i64>,
+    #[serde(default)]
+    pub anchor_strike: Option<i64>,
+    #[serde(default)]
+    pub atm_strike: Option<i64>,
+    #[serde(default)]
+    pub represented_same_expiry_strikes: Vec<i64>,
     #[serde(default)]
     pub features: BTreeMap<String, Option<f64>>,
     pub legs: Vec<Leg>,
@@ -313,6 +720,8 @@ pub struct Position {
     pub scheduled_exit_minute: i64,
     pub session_end_minute: i64,
     pub quantity: u64,
+    pub official_lot_size: Option<u64>,
+    pub lot_authority: Option<String>,
     pub legs: Vec<Leg>,
 }
 
@@ -475,16 +884,19 @@ impl Runner {
             return Err("candidate identity fields must be nonempty".to_owned());
         }
         validate_family_and_clock(candidate, minute)?;
-        if candidate.structure_id != "single_leg" || candidate.legs.len() != 1 {
-            return Err(
-                "only the frozen single-leg baseline is executable in this runner".to_owned(),
-            );
-        }
         if candidate.legs.is_empty() {
             return Err("candidate must contain at least one leg".to_owned());
         }
         if candidate.entry_eligible && candidate.quantity == 0 {
             return Err("eligible candidate quantity must be positive".to_owned());
+        }
+        match self.config.mode {
+            PolicyMode::Baseline => {
+                if candidate.structure_id != "single_leg" || candidate.legs.len() != 1 {
+                    return Err("baseline mode requires exactly one leg".to_owned());
+                }
+            }
+            PolicyMode::FinalCandidate => validate_final_structure(candidate)?,
         }
         let mut contracts = BTreeSet::new();
         for leg in &candidate.legs {
@@ -494,16 +906,18 @@ impl Runner {
             {
                 return Err("legs need unique contracts and positive quantities".to_owned());
             }
-            if leg.contract_id != candidate.contract_id || leg.quantity != candidate.quantity {
-                return Err("single-leg identity or quantity differs from candidate".to_owned());
-            }
-            let expected_side = if candidate.book.starts_with("H3_") {
-                Side::Sell
-            } else {
-                Side::Buy
-            };
-            if leg.side != expected_side {
-                return Err("leg direction differs from H3 short/H5 long policy".to_owned());
+            if self.config.mode == PolicyMode::Baseline {
+                if leg.contract_id != candidate.contract_id || leg.quantity != candidate.quantity {
+                    return Err("single-leg identity or quantity differs from candidate".to_owned());
+                }
+                let expected_side = if candidate.book.starts_with("H3_") {
+                    Side::Sell
+                } else {
+                    Side::Buy
+                };
+                if leg.side != expected_side {
+                    return Err("leg direction differs from H3 short/H5 long policy".to_owned());
+                }
             }
         }
         Ok(())
@@ -527,6 +941,8 @@ impl Runner {
             scheduled_exit_minute: candidate.scheduled_exit_minute,
             session_end_minute: candidate.session_end_minute,
             quantity: candidate.quantity,
+            official_lot_size: candidate.official_lot_size,
+            lot_authority: candidate.lot_authority.clone(),
             legs: candidate.legs.clone(),
         }
     }
@@ -565,6 +981,16 @@ impl Runner {
                 (
                     "scheduled_exit_minute".to_owned(),
                     position.scheduled_exit_minute.to_string(),
+                ),
+                (
+                    "official_lot_size".to_owned(),
+                    position
+                        .official_lot_size
+                        .map_or_else(String::new, |v| v.to_string()),
+                ),
+                (
+                    "lot_authority".to_owned(),
+                    position.lot_authority.clone().unwrap_or_default(),
                 ),
             ]),
         }
@@ -792,6 +1218,11 @@ impl Runner {
                 ))
         });
         for candidate in candidates {
+            let final_reason = if self.config.mode == PolicyMode::FinalCandidate {
+                final_rejection_reason(&candidate)
+            } else {
+                None
+            };
             let occupied = {
                 let state = self
                     .books
@@ -803,6 +1234,8 @@ impl Runner {
                 Some("planned_session_end_ineligible")
             } else if !candidate.entry_eligible {
                 Some("entry_ineligible")
+            } else if let Some(reason) = final_reason {
+                Some(reason)
             } else if occupied {
                 Some("book_occupied")
             } else if self.halted {
@@ -1220,6 +1653,7 @@ mod tests {
             recipient_log_moneyness: 0.0,
             recipient_dte_bin: "31-60d".to_owned(),
             recipient_dte: 31,
+            recipient_expiry: String::new(),
             recipient_expiry_minute: minute + 10_000,
             recipient_represented: true,
             session_end_minute: minute + 1_000,
@@ -1234,7 +1668,13 @@ mod tests {
                 },
             contract_id: legs[0].contract_id.clone(),
             quantity: legs[0].quantity,
+            official_lot_size: None,
+            lot_authority: None,
             entry_eligible: true,
+            rank_score_micro: None,
+            anchor_strike: None,
+            atm_strike: None,
+            represented_same_expiry_strikes: Vec::new(),
             features: BTreeMap::new(),
             legs,
         }
@@ -1357,6 +1797,31 @@ mod tests {
             contract_id: contract.to_owned(),
             side,
             quantity,
+            option_type: None,
+            strike: None,
+            expiry: None,
+            expiry_minute: None,
+            represented: None,
+        }
+    }
+
+    fn option_leg(
+        contract: &str,
+        side: Side,
+        quantity: u64,
+        option_type: &str,
+        strike: i64,
+        expiry: &str,
+    ) -> Leg {
+        Leg {
+            contract_id: contract.to_owned(),
+            side,
+            quantity,
+            option_type: Some(option_type.to_owned()),
+            strike: Some(strike),
+            expiry: Some(expiry.to_owned()),
+            expiry_minute: Some(10_100),
+            represented: Some(true),
         }
     }
 
@@ -1809,5 +2274,178 @@ mod tests {
                 )
                 .is_err()
         );
+    }
+
+    #[test]
+    fn final_h5_vertical_filters_and_atomic_close_are_executable() {
+        let mut runner = Runner::new(Config::final_candidate());
+        let mut candidate = candidate(
+            "vertical",
+            "H5_F2",
+            100,
+            vec![
+                option_leg("PE-22000", Side::Buy, 25, "PE", 22_000, "2026-01-29"),
+                option_leg("PE-21700", Side::Sell, 25, "PE", 21_700, "2026-01-29"),
+            ],
+        );
+        candidate.scenario = "final_candidate".to_owned();
+        candidate.structure_id = "pe_vertical_down_300".to_owned();
+        candidate.contract_id = "PE-22000".to_owned();
+        candidate.quantity = 25;
+        candidate.recipient_expiry = "2026-01-29".to_owned();
+        candidate.represented_same_expiry_strikes = vec![21_700, 22_000];
+        candidate.official_lot_size = Some(25);
+        candidate.lot_authority = Some("friend-contract-master@sha256:test".to_owned());
+        candidate.legs[1].side = Side::Sell;
+        candidate.rank_score_micro = Some(1);
+        candidate.features = BTreeMap::from([
+            ("spot_return_30m_pct".to_owned(), Some(-0.1)),
+            ("observed_risk_reversal_moneyness_pp".to_owned(), Some(0.1)),
+            ("structure_event_volume_min".to_owned(), Some(0.0)),
+        ]);
+        let first = runner
+            .process_request(
+                request(0, 100, Value::Null, empty_feedback(0), vec![candidate]),
+                "bundle",
+            )
+            .expect("final vertical opens");
+        assert_eq!(first.actions.len(), 1);
+        assert_eq!(first.actions[0].legs.len(), 2);
+        assert!(first.actions[0].atomic);
+        let filled = feedback(0, vec![outcome(&first.actions[0], OutcomeStatus::Filled)]);
+        let closed = runner
+            .process_request(request(1, 160, first.state, filled, Vec::new()), "bundle")
+            .expect("final vertical closes");
+        assert_eq!(closed.actions[0].legs[0].side, Side::Sell);
+        assert_eq!(closed.actions[0].legs[1].side, Side::Buy);
+    }
+
+    #[test]
+    fn final_h5_500_point_vertical_is_executable() {
+        let mut runner = Runner::new(Config::final_candidate());
+        let mut candidate = candidate(
+            "vertical-500",
+            "H5_F1",
+            100,
+            vec![
+                option_leg("PE-22000", Side::Buy, 25, "PE", 22_000, "2026-01-29"),
+                option_leg("PE-21500", Side::Sell, 25, "PE", 21_500, "2026-01-29"),
+            ],
+        );
+        candidate.scenario = "final_candidate".to_owned();
+        candidate.structure_id = "pe_vertical_down_500".to_owned();
+        candidate.contract_id = "PE-22000".to_owned();
+        candidate.quantity = 25;
+        candidate.recipient_expiry = "2026-01-29".to_owned();
+        candidate.represented_same_expiry_strikes = vec![21_500, 22_000];
+        candidate.official_lot_size = Some(25);
+        candidate.lot_authority = Some("friend-contract-master@sha256:test".to_owned());
+        candidate.legs[1].side = Side::Sell;
+        candidate.rank_score_micro = Some(1);
+        candidate.features = BTreeMap::from([("spot_return_30m_pct".to_owned(), Some(-0.1))]);
+        let response = runner
+            .process_request(
+                request(0, 100, Value::Null, empty_feedback(0), vec![candidate]),
+                "bundle",
+            )
+            .expect("500-point vertical opens");
+        assert_eq!(response.actions.len(), 1);
+        assert_eq!(response.actions[0].legs.len(), 2);
+        assert!(response.actions[0].atomic);
+        assert_eq!(response.actions[0].lineage["official_lot_size"], "25");
+        assert_eq!(
+            response.actions[0].lineage["lot_authority"],
+            "friend-contract-master@sha256:test"
+        );
+    }
+
+    #[test]
+    fn final_structure_rejects_unrepresented_leg_and_wrong_lot() {
+        let mut candidate = candidate(
+            "bad-vertical",
+            "H5_F1",
+            100,
+            vec![
+                option_leg("PE-22000", Side::Buy, 50, "PE", 22_000, "2026-01-29"),
+                option_leg("PE-21500", Side::Sell, 50, "PE", 21_500, "2026-01-29"),
+            ],
+        );
+        candidate.scenario = "final_candidate".to_owned();
+        candidate.structure_id = "pe_vertical_down_500".to_owned();
+        candidate.contract_id = "PE-22000".to_owned();
+        candidate.quantity = 50;
+        candidate.recipient_expiry = "2026-01-29".to_owned();
+        candidate.represented_same_expiry_strikes = vec![22_000];
+        candidate.official_lot_size = Some(25);
+        candidate.lot_authority = Some("friend-contract-master@sha256:test".to_owned());
+        candidate.legs[1].side = Side::Sell;
+        candidate.rank_score_micro = Some(1);
+        candidate.features = BTreeMap::from([("spot_return_30m_pct".to_owned(), Some(-0.1))]);
+        let error = Runner::new(Config::final_candidate())
+            .process_request(
+                request(0, 100, Value::Null, empty_feedback(0), vec![candidate]),
+                "bundle",
+            )
+            .expect_err("wrong lot and incomplete chain must fail closed");
+        assert!(error.contains("official lot"));
+    }
+
+    #[test]
+    fn final_h3_outward_leg_is_selected_from_declared_inventory() {
+        let mut runner = Runner::new(Config::final_candidate());
+        let mut candidate = candidate(
+            "outward",
+            "H3_F4",
+            100,
+            vec![option_leg(
+                "CE-20500",
+                Side::Sell,
+                25,
+                "CE",
+                20_500,
+                "2026-02-26",
+            )],
+        );
+        candidate.scenario = "final_candidate".to_owned();
+        candidate.structure_id = "outward_1_ce".to_owned();
+        candidate.contract_id = "CE-20500".to_owned();
+        candidate.quantity = 25;
+        candidate.recipient_expiry = "2026-02-26".to_owned();
+        candidate.official_lot_size = Some(25);
+        candidate.lot_authority = Some("friend-contract-master@sha256:test".to_owned());
+        candidate.anchor_strike = Some(20_600);
+        candidate.atm_strike = Some(21_000);
+        candidate.represented_same_expiry_strikes = vec![20_400, 20_500, 20_600, 20_700];
+        candidate.rank_score_micro = Some(1);
+        candidate.features = BTreeMap::from([
+            ("spot_return_30m_pct".to_owned(), Some(-0.1)),
+            ("structure_event_volume_min".to_owned(), Some(0.0)),
+        ]);
+        let response = runner
+            .process_request(
+                request(0, 100, Value::Null, empty_feedback(0), vec![candidate]),
+                "bundle",
+            )
+            .expect("outward leg opens");
+        assert_eq!(response.actions.len(), 1);
+        assert_eq!(response.actions[0].legs[0].instrument_id, "CE-20500");
+    }
+
+    #[test]
+    fn frozen_reference_bundle_recomputes_known_monthly_score() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../models/exp032_reference_model_bundle.json");
+        let bundle = ModelBundle::load(
+            &path,
+            "158d5bc92d2da250174649bfd1f1a4c7961d96bda14e9467f4adcb844ffb0b20",
+        )
+        .expect("reference model loads");
+        let mut candidate = candidate("score", "H5_F2", 100, vec![leg("P", Side::Buy, 1)]);
+        candidate.date = "2024-07-01".to_owned();
+        candidate.features = FINAL_FEATURES
+            .iter()
+            .map(|name| ((*name).to_owned(), Some(0.0)))
+            .collect();
+        assert_eq!(bundle.score(&candidate).expect("score"), 198_495_883);
     }
 }

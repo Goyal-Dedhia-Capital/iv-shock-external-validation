@@ -27,10 +27,11 @@ def test_h5_moneyness_and_selection_are_event_time_only() -> None:
     assert registry["views"]["primary_exit_policy"] == "scheduled_exact_same_session_close"
 
 
-def test_unfinished_detectors_and_candidate_cannot_look_production_ready() -> None:
+def test_unfinished_detectors_and_final_candidate_status_are_explicit() -> None:
     detectors = load("detectors.json")["detectors"]
     assert detectors[0]["external_validation_gate"] == "READY_FOR_SYNTHETIC_IMPLEMENTATION_TESTS"
     assert all(item["external_validation_gate"].startswith("BLOCKED_") for item in detectors[1:])
     candidate = load("final_candidate_policy.json")
     assert candidate["execution_sensitivity"]["funded_claim_allowed"] is False
-    assert candidate["basket_rules_status"].startswith("not_executable_")
+    assert candidate["basket_rules_status"].startswith("executable_rust_policy_")
+    assert candidate["remaining_external_inputs"]

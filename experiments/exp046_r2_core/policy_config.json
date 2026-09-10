@@ -1,0 +1,5 @@
+{
+  "books": ["R2_SCORE_TIER_2X"],
+  "scenarios": ["baseline"],
+  "admission_mode": "family_specific"
+}
