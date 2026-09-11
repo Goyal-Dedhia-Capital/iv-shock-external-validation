@@ -29,6 +29,7 @@
     "calendar_iv", "delta", "gamma", "theta", "vega", "model_status",
     "data_source", "lot_size"
   ],
+  "ttm_canonical_unit": "years; owner-declared calendar_days are divided by 365 during normalization",
   "null_policy": "Preserve nulls and emit coverage reasons; never replace with zero or future/backfilled values.",
   "duplicate_policy": "Duplicate source row keys fail closed.",
   "pchip_authority": "research_and_accounting_only_never_execution"

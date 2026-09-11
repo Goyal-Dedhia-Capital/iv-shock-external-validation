@@ -16,7 +16,7 @@ semantics, not layers to add together automatically.
 | `EXT-H5-BASELINE` | Do the five selected long-response families survive sequential execution? | H5_F1–F5, single PE long, five independent books | `scripts/run-strategy --runner policy` |
 | `EXT-FINAL-STRUCTURES` | Do the later structure, causal filters and frozen score transfer together? | H3_F4 outward-1 CE; H5 F1/F2/F3/F5 300/500-point PE verticals | final policy with both `variants/final_portfolio_policy_config.json` and the reference model bundle |
 | `EXT-FINAL-SCORE` | Does the frozen prior-month ridge score transfer? | Exact EXP032 family-month coefficients; admit only `rank_score_micro > 0` | final policy plus `models/exp032_reference_model_bundle.json` |
-| `EXT-FINAL-FUNDED` | Do those intents survive executable quotes, costs and shared capital? | One shared non-compounding ₹10 lakh engine account | external engine integration; this repository emits and verifies intents but does not vendor the engine |
+| `EXT-FINAL-FUNDED` | Do those intents survive executable quotes, costs and shared capital? | One shared non-compounding ₹10 lakh engine account | `scripts/run-funded` with an explicit margin and capacity lane |
 | `EXT-EXP021-SIZING` | Does causal 1x/2x sizing help three accepted books? | H3_F1, H3_F2 and H5_F2; score changes size but never admission | `scripts/run-exp021` after the documented monthly fit |
 | `EXT-EXP046-R2` | Does the separate promoted R2 OTM call-short book transfer? | 31–60 DTE, 250–500-point OTM CE, 30-minute hold, Q1 reject/Q4–Q5 2x | `scripts/run-exp046` |
 

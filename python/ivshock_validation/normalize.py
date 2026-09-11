@@ -103,6 +103,9 @@ def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFr
     volume_expr = pl.col(contract["volume"]["column"]).cast(pl.Float64, strict=True)
     if negative_one_is_missing:
         volume_expr = pl.when(volume_expr == -1).then(None).otherwise(volume_expr)
+    ttm_expr = pl.col(contract["iv"]["ttm_column"]).cast(pl.Float64, strict=True)
+    if contract["iv"]["ttm_units"] == "calendar_days":
+        ttm_expr = ttm_expr / 365.0
 
     normalized = frame.with_columns(
         timestamp_expr.alias("timestamp"),
@@ -113,7 +116,7 @@ def normalize_source(frame: pl.LazyFrame, contract: dict[str, Any]) -> pl.LazyFr
         pl.col(contract["open_interest"]["column"])
         .cast(pl.Float64, strict=True)
         .alias("open_interest"),
-        pl.col(contract["iv"]["ttm_column"]).cast(pl.Float64, strict=True).alias("calendar_ttm"),
+        ttm_expr.alias("calendar_ttm"),
         pl.col(contract["iv"]["column"]).cast(pl.Float64, strict=True).alias("calendar_iv"),
         bid_expr.alias("bid"),
         ask_expr.alias("ask"),

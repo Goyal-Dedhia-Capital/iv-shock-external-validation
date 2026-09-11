@@ -1,0 +1,24 @@
+{
+  "schema_version": "gdc.iv-shock.external-funded-run.v1",
+  "input_events_jsonl": "/absolute/path/to/policy-events.jsonl",
+  "strategy_program": "/absolute/path/to/iv-shock-external-validation/scripts/run-strategy",
+  "strategy_args": [
+    "--runner",
+    "policy",
+    "--calendar",
+    "/absolute/path/to/exchange_calendar.local.json",
+    "--source-contract",
+    "/absolute/path/to/source_contract.local.json",
+    "--stage",
+    "execution"
+  ],
+  "output_dir": "/absolute/path/to/immutable-results/h5-baseline-cross-zerodha",
+  "initial_cash_micro": 1000000000000,
+  "margin_mode": "premium_only",
+  "execution": {
+    "capacity_mode": "unlimited_quote",
+    "slippage_bps": 0,
+    "slippage_ticks": 0,
+    "volume_participation_bps": 0
+  }
+}

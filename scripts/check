@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cargo_target="${TMPDIR:-/tmp}/iv-shock-external-validation-target"
 uv run ruff check python tests
 uv run ruff check experiments/exp021_walkforward_sizing/*.py
 uv run pytest -q
@@ -9,13 +10,17 @@ python3 -m json.tool contracts/research_protocol.schema.json >/dev/null
 python3 -m json.tool contracts/output_schema.json >/dev/null
 python3 -m json.tool contracts/source_contract.example.json >/dev/null
 python3 -m json.tool contracts/exchange_calendar.example.json >/dev/null
+python3 -m json.tool contracts/funded_run.example.json >/dev/null
 for path in variants/*.json; do
   python3 -m json.tool "$path" >/dev/null
 done
+funded_runner="experiments/external_funded_runner/Cargo.toml"
+cargo fmt --manifest-path "$funded_runner" -- --check
+CARGO_TARGET_DIR="$cargo_target" cargo clippy --manifest-path "$funded_runner" --all-targets -- -D warnings
+CARGO_TARGET_DIR="$cargo_target" cargo test --locked --manifest-path "$funded_runner" --quiet
 for path in models/*.json; do
   python3 -m json.tool "$path" >/dev/null
 done
-cargo_target="${TMPDIR:-/tmp}/iv-shock-external-validation-target"
 cargo fmt --manifest-path rust/Cargo.toml --all -- --check
 CARGO_TARGET_DIR="$cargo_target" cargo clippy --manifest-path rust/Cargo.toml --workspace --all-targets -- -D warnings
 CARGO_TARGET_DIR="$cargo_target" cargo test --manifest-path rust/Cargo.toml --workspace --quiet

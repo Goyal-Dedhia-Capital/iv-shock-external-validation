@@ -15,7 +15,8 @@ contain proprietary raw option data, API credentials, or mutable local caches.
    selection semantics.
 2. **High-resolution extension:** evaluate rolling 60-second and native
    one-second innovations with separately labelled entry-delay sensitivities.
-3. **Execution overlay:** add confirmed bid/ask authority, broker costs, and
+3. **Execution overlay:** cross confirmed bid/ask, add adverse-slippage lanes,
+   the frozen Zerodha options costs, explicit capacity evidence, margin and
    sequential account constraints without changing the descriptive baseline.
 
 The high-resolution lanes are new sensitivities. They are never reported as
@@ -85,7 +86,8 @@ session boundaries.
 
 Exact experiment definitions and commands are in
 [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) and
-[`docs/RUNBOOK.md`](docs/RUNBOOK.md). The three finalized historical strategy
+[`docs/RUNBOOK.md`](docs/RUNBOOK.md). The external data-owner inputs and return
+bundle are specified in [`docs/ASJAD_HANDOFF.md`](docs/ASJAD_HANDOFF.md). The three finalized historical strategy
 books have separate, runnable handoffs under [`experiments/`](experiments/README.md).
 
 1. One session, full represented expiry inventory: schema and causal resampling.
@@ -122,3 +124,8 @@ concentration. Planned or pilot-only historical variants remain labelled as such
   parity is not assigned to the data owner; strategy correctness is enforced by
   deterministic expected-answer, adversarial, lifecycle, and restart tests in
   `scripts/check`.
+- The generic-engine funded host, observed-liquidity execution model, frozen
+  Zerodha cost kernel and per-family distribution reporter are implemented in
+  `experiments/external_funded_runner/`. Real H3 funded claims remain blocked
+  until the owner supplies causal historical margin; the unfunded lane is
+  explicitly labelled and cannot be promoted into a funded result.

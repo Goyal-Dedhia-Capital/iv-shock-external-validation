@@ -84,9 +84,22 @@ bundle and must match source contract, event minute, sign, score, threshold,
 support and quiet status. The policy validates that match; the feeder retains
 the detector response identity in its immutable run manifest.
 
-## 6. Funded execution
+## 6. Funded execution and cost headroom
 
-Feed the final policy responses to one generic-engine account configured with ₹10,00,000 initial cash and no reset or compounding. Use confirmed bid/ask crossing for the primary executable lane. Apply date-effective costs per fill and report the Groww pinned-2026 schedule separately when it is only a sensitivity. The engine must own capital admission, signed premium flows, fees, margin, marks, fills and reconciliation.
+Feed the policy packets as chronological `SealedEvent` JSONL to the executable
+host in `experiments/external_funded_runner/`. The example configuration is
+`contracts/funded_run.example.json`; exact commands and margin/capacity labels
+are in that experiment's README. Use ₹10,00,000 initial cash, no reset and no
+compounding. The primary executable lane crosses confirmed bid/ask, then the
+frozen Zerodha kernel applies per fill. Run adverse tick/bps slippage as
+separate immutable lanes. The engine owns capital admission, signed premium
+flows, fees, margin, marks, fills and reconciliation.
+
+For H3, `authoritative` margin is the only funded lane. If the archive has no
+historical margin, `unfunded_zero_sensitivity` can isolate spread, slippage and
+fees but cannot support funded return or capital-efficiency claims. Pure H5
+single-leg longs may use `premium_only`; H5 verticals contain an opening sell
+leg and therefore also require authoritative margin for a funded label.
 
 ## 7. Run the two separate finalized books
 

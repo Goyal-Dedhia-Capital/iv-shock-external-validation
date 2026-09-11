@@ -198,7 +198,7 @@ def test_declared_source_mappings_are_used() -> None:
     assert normalized["volume"].drop_nulls().head(1).item() == 2
     assert normalized["open_interest"].head(1).item() == 1000
     assert normalized["calendar_iv"].head(1).item() == 0.20
-    assert normalized["calendar_ttm"].head(1).item() == 21
+    assert normalized["calendar_ttm"].head(1).item() == pytest.approx(21 / 365)
     assert normalized["forward"].head(1).item() == 23805
 
 

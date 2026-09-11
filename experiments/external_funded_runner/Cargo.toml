@@ -1,0 +1,25 @@
+[package]
+name = "iv-shock-external-funded-runner"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+publish = false
+
+[[bin]]
+name = "external-funded-runner"
+path = "src/main.rs"
+
+[dependencies]
+backtest-contracts = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/contracts" }
+backtest-engine = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/engine" }
+backtest-research-process = { path = "../../vendor/generic-backtest-engine-6ce0a23/crates/research-process" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+
+[workspace]
+
+[lints.clippy]
+all = "deny"
+pedantic = "deny"
+nursery = "deny"

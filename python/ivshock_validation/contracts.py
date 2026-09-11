@@ -204,5 +204,7 @@ def validate_source_contract(
         raise ContractError("v1 supports only last_non_null OI aggregation")
     if _lookup(contract, "resampling.quote_aggregation") != "last_non_null_within_minute":
         raise ContractError("v1 supports only last_non_null_within_minute quotes")
+    if _lookup(contract, "iv.ttm_units") not in {"years", "calendar_days"}:
+        raise ContractError("v1 supports iv.ttm_units of years or calendar_days")
 
     return contract
